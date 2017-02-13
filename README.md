@@ -3,7 +3,15 @@ Deep Convolutional Neural Networks for Musical Source Separation
 
 This repository contains routines for data generation and preprocessing, useful in training neural networks with large datasets that do not fit into memory. Additionally, it contains python code to train convolutional neural networks for music source separation and matlab code to evaluate the quality of separation. 
 
-Additionally, it contains code for training a network for singing voice source separation with the dataset iKala dataset and voice, bass, drums separation with DSD100 dataset.
+For training neural networks we use <a href="http://lasagne.readthedocs.io/">Lasagne</a> and <a href="http://deeplearning.net/software/theano/">Theano</a>.
+
+
+In the "examples" directory we include examples for training neural networks for singing voice source separation with the dataset iKala dataset and for voice, bass, drums separation with DSD100 dataset.
+
+We provide code for separation using already trained models for:
+- singing voice source separation 
+
+    python separate_ikala.py -i <inputfile> -o <outputdir>
 
 # Data generation
 Compute the features for a given set of audio signals extending the "Transform" class in transform.py
@@ -42,7 +50,12 @@ P. Chandna, M. Miron, J. Janer, and E. Gomez,
 International Conference on Latent Variable Analysis and Signal Separation, 2017.
 <a href="http://mtg.upf.edu/node/3680">PDF</a>
 
-#Dependencies
+#Dependencies for running separation
+python 2.7
+numpy, scipy, cPickle, theano, lasagne
+
+#Dependencies for training
+python 2.7
 climate, numpy, scipy, cPickle, theano, lasagne
 
 The dependencies can be installed with pip:
@@ -62,12 +75,16 @@ The code to for feature computation and training the network can be found in "ex
 
 #Running examples
 
-For iKala:
+For iKala :
 
     python -m examples.ikala.compute_features
     python -m examples.ikala.trainCNN
 
-For SiSEC MUS using DSD100 dataset
+For SiSEC MUS using DSD100 dataset :
+
+    python -m examples.dsd100.compute_features
+    python -m examples.dsd100.trainCNN
+
 
 #Evaluation 
 
