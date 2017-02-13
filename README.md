@@ -10,12 +10,12 @@ In the "examples" directory we include examples for training neural networks for
 We provide code for separation using already trained models for:
 - singing voice source separation in examples/ikala/separate_ikala.py :
 
-    python separate_ikala.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
+    python separate_ikala.py -i \<inputfile\> -o \<outputdir\> -m \<path_to_model.pkl\>
 
 where : 
-- <inputfile> is the wav file to separate
-- <outputdir> is the output directory where to write the separation
-- <path_to_model.pkl> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOYlRxQTl3eDBxQTg">this address</a>
+- \<inputfile\> is the wav file to separate
+- \<outputdir\> is the output directory where to write the separation
+- \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOYlRxQTl3eDBxQTg">this address</a>
 
 # Data generation
 Compute the features for a given set of audio signals extending the "Transform" class in transform.py
