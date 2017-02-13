@@ -7,9 +7,9 @@ For training neural networks we use <a href="http://lasagne.readthedocs.io/">Las
 
 In the "examples" directory we include examples for training neural networks for singing voice source separation with the dataset iKala dataset and for voice, bass, drums separation with DSD100 dataset.
 
-We provide code for separation using already trained models for:
+We provide code for separation using already trained models for different tasks.
 
-1. Singing voice source separation in examples/ikala/separate_ikala.py :
+Singing voice source separation in examples/ikala/separate_ikala.py :
 
     python separate_ikala.py -i \<inputfile\> -o \<outputdir\> -m \<path_to_model.pkl\>
 
