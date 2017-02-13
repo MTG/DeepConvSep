@@ -111,7 +111,7 @@ For SiSEC-MUS/DSD100, use the scripts at the <a href="https://github.com/faroit/
 
 #License
 
-    Copyright (c) 2014-2017 Marius Miron <miron.marius at gmail.com>, Pritish Chandna 
+    Copyright (c) 2014-2017 Marius Miron <miron.marius at gmail dot com>, Pritish Chandna <pc2752 at gmail dot com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
