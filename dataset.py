@@ -67,7 +67,7 @@ def parmap(f, X, nprocs = multiprocessing.cpu_count()-1):
 
 
 """
-Classes to load features which have been computed with one of the functions in transform_general.py, 
+Classes to load features which have been computed with one of the functions in transform.py, 
 and yield batches necessary for training neural networks. 
 These classes are useful when the data does not fit into memory, and the batches can be loaded in chunks.
 """
