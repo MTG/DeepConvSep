@@ -11,7 +11,7 @@ We provide code for separation using already trained models for different tasks.
 
 Singing voice source separation in examples/ikala/separate_ikala.py :
 
-    python separate_ikala.py -i \<inputfile\> -o \<outputdir\> -m \<path_to_model.pkl\>
+    python separate_ikala.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
 
 where : 
 - \<inputfile\> is the wav file to separate
