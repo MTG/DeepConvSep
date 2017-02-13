@@ -1,4 +1,4 @@
- """
+"""
     This file is part of DeepConvSep.
 
     Copyright (c) 2014-2017 Marius Miron  <miron.marius at gmail.com>
@@ -31,6 +31,22 @@ import random
 import re
 import util
 from util import *
+
+def sinebell(lengthWindow):
+    """
+    window = sinebell(lengthWindow)
+    
+    Computes a \"sinebell\" window function of length L=lengthWindow
+    
+    The formula is:
+
+    .. math::
+    
+        window(t) = sin(\pi \\frac{t}{L}), t=0..L-1
+        
+    """
+    window = np.sin((np.pi*(np.arange(lengthWindow)))/(1.0*lengthWindow))
+    return window
 
 
 class Transforms(object):
@@ -393,18 +409,4 @@ def istft_norm(X, window=sinebell(2048),
     return data
 
 
-def sinebell(lengthWindow):
-    """
-    window = sinebell(lengthWindow)
-    
-    Computes a \"sinebell\" window function of length L=lengthWindow
-    
-    The formula is:
 
-    .. math::
-    
-        window(t) = sin(\pi \\frac{t}{L}), t=0..L-1
-        
-    """
-    window = np.sin((np.pi*(np.arange(lengthWindow)))/(1.0*lengthWindow))
-    return window
