@@ -9,7 +9,6 @@ Compute the features for a given set of audio signals extending the "Transform" 
 For instance the TransformFFT class helps computing the STFT of an audio signal and saves the magnitude spectrogram as a binary file.   
 
 Examples
---------
 
     ### 1. Computing the STFT of a matrix of signals \"audio\" and writing the STFT data in \"path\" (except the phase)
     tt1=transformFFT(frameSize=2048, hopSize=512, sampleRate=44100)
@@ -26,6 +25,12 @@ Examples
 
 # Data preprocessing
 Load features which have been computed with transform.py, and yield batches necessary for training neural networks. These classes are useful when the data does not fit into memory, and the batches can be loaded in chunks.
+
+Example   
+    
+    ### Load binary training data from the out_path folder
+    train = LargeDataset(path_transform_in=out_path, batch_size=32, batch_memory=200, time_context=30, overlap=20, nprocs=7)
+    
 
 # References
 More details on the separation method can be found in the following article:
@@ -48,8 +53,6 @@ The dependencies can be installed with pip:
 
 #iKala - Singing voice separation
 <a href="http://www.music-ir.org/mirex/wiki/2016:Singing_Voice_Separation_Results">iKala (2nd place MIREX Singing voice separation 2016) </a>
-
-
 
 
 #Running examples
