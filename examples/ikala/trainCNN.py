@@ -338,12 +338,12 @@ if __name__ == "__main__":
         climate.add_arg('--overlap', help="overlap time context for training")
         climate.add_arg('--nprocs', help="number of processor to parallelize file reading")
         climate.add_arg('--scale_factor', help="scale factor for the data")
-       
+        db=None
         kwargs = climate.parse_args()
         if kwargs.__getattribute__('db'):
             db = kwargs.__getattribute__('db')
         # else:
-        #     db='/home/marius/Documents/Database/iKala/'   
+        #     db='/home/marius/Documents/Database/iKala/'  
         assert os.path.isdir(db), "Please input the directory for the iKala dataset with --db path_to_iKala"  
         if kwargs.__getattribute__('model'):
             model = kwargs.__getattribute__('model')

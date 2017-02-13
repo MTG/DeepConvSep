@@ -21,7 +21,7 @@ def load_model(filename):
     return params
 
 
-def compute_file(audio, phase=False, frameSize=1024, hopSize=256, sampleRate=44100, window=np.hanning):
+def compute_file(audio, phase=False, frameSize=1024, hopSize=512, sampleRate=44100, window=np.hanning):
     win = window(frameSize)
     X = stft_norm(audio, window=win, hopsize=float(hopSize), nfft=float(frameSize), fs=float(sampleRate))
     mag = np.abs(X)  
@@ -33,7 +33,7 @@ def compute_file(audio, phase=False, frameSize=1024, hopSize=256, sampleRate=441
         return mag
 
 
-def compute_inverse(mag, phase, frameSize=1024, hopSize=256, sampleRate=44100, window=np.hanning):
+def compute_inverse(mag, phase, frameSize=1024, hopSize=512, sampleRate=44100, window=np.hanning):
     win = window(frameSize)
     mag = mag  * np.sqrt(frameSize) 
     Xback = mag * np.exp(1j*phase)
@@ -47,7 +47,7 @@ def sinebell(lengthWindow):
 
 
 def stft_norm(data, window=sinebell(2048),
-         hopsize=256.0, nfft=2048.0, fs=44100.0):
+         hopsize=512.0, nfft=2048.0, fs=44100.0):
 
     lengthWindow = window.size   
     lengthData = data.size    
@@ -77,7 +77,7 @@ def stft_norm(data, window=sinebell(2048),
 
 def istft_norm(X, window=sinebell(2048),
           analysisWindow=None,
-          hopsize=256.0, nfft=2048.0):
+          hopsize=512.0, nfft=2048.0):
   
     X=X.T
     if analysisWindow is None:

@@ -31,6 +31,7 @@ if __name__ == "__main__":
     if len(sys.argv)>-1:
         climate.add_arg('--db', help="the dataset path")
     kwargs = climate.parse_args()
+    db=None
     if kwargs.__getattribute__('db'):
         db = kwargs.__getattribute__('db')
     # else:

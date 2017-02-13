@@ -57,10 +57,12 @@ International Conference on Latent Variable Analysis and Signal Separation, 2017
 
 #Dependencies for running separation
 python 2.7
+
 numpy, scipy, cPickle, theano, lasagne
 
 #Dependencies for training
 python 2.7
+
 climate, numpy, scipy, cPickle, theano, lasagne
 
 The dependencies can be installed with pip:
@@ -102,10 +104,10 @@ For iKala, you need to run the script evaluate_SS_iKala.m for each of the 252 fi
 The script takes as parameters the id of the file, the path to the dataset, and the method of separation, which needs to be a directory containing the separation results, stored in 'output' folder.
 
     for id=1:252
-        evaluate_SS_iKala(id,'/homedtic/mmiron/data/iKala/','fft_2048');
+        evaluate_SS_iKala(id,'/homedtic/mmiron/data/iKala/','fft_1024');
     end
 
-For SiSEC-MUS/DSD100, change in the python file "prepare_files_dsd100pc.py" the variable "path_in" to the path on your hard-drive where you stored the separation. Then, use the scripts at the <a href="https://github.com/faroit/dsd100mat">web-page</a>.
+For SiSEC-MUS/DSD100, use the scripts at the <a href="https://github.com/faroit/dsd100mat">web-page</a>.
 
 #License
 
