@@ -13,11 +13,6 @@ import theano.tensor as T
 import theano.sandbox.rng_mrg
 import lasagne
 
-if sys.version_info[0] == 2:
-    from urllib import urlretrieve
-else:
-    from urllib.request import urlretrieve
-
 
 def load_model(filename):
     f=file(filename,'rb')
@@ -196,7 +191,7 @@ def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=1025):
    l_out = lasagne.layers.NonlinearityLayer(lasagne.layers.BiasLayer(l_merge), nonlinearity=lasagne.nonlinearities.rectify)
    return l_out
 
-def train_auto(filein,outdir,scale_factor=0.3,time_context = 30,overlap = 20,batch_size=32,input_size=513):
+def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 20,batch_size=32,input_size=513):
     input_var2 = T.tensor4('inputs')
     target_var2 = T.tensor4('targets')
     rand_num = T.tensor4('rand_num')
@@ -204,14 +199,9 @@ def train_auto(filein,outdir,scale_factor=0.3,time_context = 30,overlap = 20,bat
     eps=1e-8  
     network2 = build_ca(input_var2,batch_size,time_context,input_size)
     
-    # We'll now download the model if it doesn't exist
-    url = 'https://volafile.io/get/Hcq1TBfHNqYu/fft_1024.pkl'
-    filename = 'fft_1024.pkl'
-    if not os.path.exists(filename):
-        print("Downloading the network model...")
-        urlretrieve(url, filename)
-    print("Loading model...")
-    params=load_model(filename)
+  
+    #print("Loading model...")
+    params=load_model(model)
     lasagne.layers.set_all_param_values(network2,params)
 
     prediction2 = lasagne.layers.get_output(network2, deterministic=True)
@@ -236,18 +226,18 @@ def train_auto(filein,outdir,scale_factor=0.3,time_context = 30,overlap = 20,bat
     audioObj = audioObj.astype('float') / maxv
       
     if sampleRate == 44100:     
-        audio = (audioObj[:,0] + audioObj[:,1]) / 2
+        audio = audioObj[:,0] + audioObj[:,1]
         mag,ph=compute_file(audio,phase=True)     
         mag=scale_factor*mag.astype(np.float32)
 
         batches,nchunks = generate_overlapadd(mag,input_size=mag.shape[-1],time_context=time_context,overlap=overlap,batch_size=batch_size,sampleRate=44100)
         output=[]
-        print("Separating...")
+        #print("Separating...")
         batch_no=1
         for batch in batches:
             batch_no+=1           
             output.append(predict_function2(batch))
-        print("Writing...")  
+        #print("Writing...")  
         output=np.array(output)
         bmag,mm= overlapadd(output,batches,nchunks,overlap=overlap)
         
@@ -268,19 +258,21 @@ def train_auto(filein,outdir,scale_factor=0.3,time_context = 30,overlap = 20,bat
 
 def main(argv):  
     try:
-       opts, args = getopt.getopt(argv,"hi:o:",["ifile=","odir="])
+       opts, args = getopt.getopt(argv,"hi:o:m:",["ifile=","odir=","--mfile"])
     except getopt.GetoptError:
-       print 'python separate_ikala.py -i <inputfile> -o <outputdir>'
+       print 'python separate_ikala.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>'
        sys.exit(2)
     for opt, arg in opts:
-       if opt == '-h':
-          print 'python separate_ikala.py -i <inputfile> -o <outputdir>'
+        if opt == '-h':
+          print 'python separate_ikala.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>'
           sys.exit()
-       elif opt in ("-i", "--ifile"):
+        elif opt in ("-i", "--ifile"):
           inputfile = arg
-       elif opt in ("-o", "--odir"):
+        elif opt in ("-o", "--odir"):
           outdir = arg
-    train_auto(inputfile,outdir,0.3,30,20,32,513)   
+        elif opt in ("-m", "--mfile"):
+          model = arg
+    train_auto(inputfile,outdir,model,0.3,30,20,32,513)   
 
 if __name__ == "__main__":
     main(sys.argv[1:])

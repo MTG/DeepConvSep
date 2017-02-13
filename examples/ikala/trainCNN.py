@@ -63,7 +63,7 @@ def save_model(filename, model):
     f.close()
     return None
 
-def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=1025):
+def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=513):
     """
     Builds a network with lasagne
     
@@ -299,7 +299,7 @@ if __name__ == "__main__":
     Source separation for the iKala dataset.
     2nd place MIREX Singing voice separation 2016
     http://www.music-ir.org/mirex/wiki/2016:Singing_Voice_Separation_Results
-    
+
     More details in the following article:
     P. Chandna, M. Miron, J. Janer, and E. Gomez,
     \“Monoaural audio source separation using deep convolutional neural networks,\” 
@@ -348,7 +348,7 @@ if __name__ == "__main__":
         if kwargs.__getattribute__('model'):
             model = kwargs.__getattribute__('model')
         else:
-            model="fft_2048"    
+            model="fft_1024"    
         if kwargs.__getattribute__('batch_size'):
             batch_size = int(kwargs.__getattribute__('batch_size')) 
         else:
@@ -379,7 +379,7 @@ if __name__ == "__main__":
             scale_factor = 0.3
 
     #tt object needs to be the same as the one in compute_features
-    tt = transformFFT(frameSize=2048, hopSize=512, sampleRate=44100, window=blackmanharris)
+    tt = transformFFT(frameSize=1024, hopSize=512, sampleRate=44100, window=blackmanharris)
     pitchhop=0.032*float(tt.sampleRate) #seconds to frames
    
     dirtt=os.path.join(db,'transforms/t1/') 

@@ -44,7 +44,7 @@ if __name__ == "__main__":
             audioObj, sampleRate, bitrate = util.readAudioScipy(os.path.join(db,"Wavfile",f))
             if tt is None:
                 #initialize the transform object which will compute the STFT
-                tt=transformFFT(frameSize=2048, hopSize=512, sampleRate=sampleRate, window=blackmanharris)
+                tt=transformFFT(frameSize=1024, hopSize=512, sampleRate=sampleRate, window=blackmanharris)
                 pitchhop=0.032*float(sampleRate) #seconds to frames
             assert sampleRate == 44100,"Sample rate needs to be 44100"
     
