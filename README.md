@@ -3,6 +3,8 @@ Deep Convolutional Neural Networks for Musical Source Separation
 
 This repository contains routines for data generation and preprocessing, useful in training neural networks with large datasets that do not fit into memory. Additionally, it contains python code to train convolutional neural networks for music source separation and matlab code to evaluate the quality of separation. 
 
+Additionally, it contains code for training a network for singing voice source separation with the dataset iKala dataset and voice, bass, drums separation with DSD100 dataset.
+
 # Data generation
 Compute the features for a given set of audio signals extending the "Transform" class in transform.py
 
@@ -49,11 +51,14 @@ The dependencies can be installed with pip:
     pip install https://github.com/Lasagne/Lasagne/archive/master.zip
 
 #Separating Professionally Produced Music
-<a href="http://www.sisec17.audiolabs-erlangen.de">SiSEC MUS</a> using <a href="https://sisec.inria.fr/home/2016-professionally-produced-music-recordings/">DSD100</a> dataset
+We separate voice, bass, drums and accompaniment using DSD100 dataset comprising professionally produced music. For more details about the challenge, please refer to <a href="http://www.sisec17.audiolabs-erlangen.de">SiSEC MUS</a> challenge and <a href="https://sisec.inria.fr/home/2016-professionally-produced-music-recordings/">DSD100</a> dataset.
+
+The code to for feature computation and training the network can be found in "examples/dsd100" folder.
 
 #iKala - Singing voice separation
-<a href="http://www.music-ir.org/mirex/wiki/2016:Singing_Voice_Separation_Results">iKala (2nd place MIREX Singing voice separation 2016) </a>
+We separate voice and accompaniment using the iKala dataset. For more details about the challenge, please refer to <a href="http://www.music-ir.org/mirex/wiki/2016:Singing_Voice_Separation_Results">MIREX Singing voice separation 2016</a> and <a href="http://mac.citi.sinica.edu.tw/ikala/">iKala</a> dataset. 
 
+The code to for feature computation and training the network can be found in "examples/ikala" folder.
 
 #Running examples
 
