@@ -6,7 +6,7 @@ More details in the following article:
 P. Chandna, M. Miron, J. Janer, and E. Gomez,
 \“Monoaural audio source separation using deep convolutional neural networks,\” 
 International Conference on Latent Variable Analysis and Signal Separation, 2017.
-http://mtg.upf.edu/node/3680
+<a href="http://mtg.upf.edu/node/3680">PDF</a>
 
 #Separating Professionally Produced Music
 SiSEC MUS <a href="http://www.sisec17.audiolabs-erlangen.de">SiSEC MUS</a> using <a href="https://sisec.inria.fr/home/2016-professionally-produced-music-recordings/">DSD100</a> dataset
@@ -19,8 +19,9 @@ SiSEC MUS <a href="http://www.sisec17.audiolabs-erlangen.de">SiSEC MUS</a> using
 climate, numpy, scipy, cPickle, theano, lasagne
 
 The dependencies can be installed with pip:
-pip install numpy scipy pickle cPickle climate theano 
-pip install https://github.com/Lasagne/Lasagne/archive/master.zip
+
+    pip install numpy scipy pickle cPickle climate theano 
+    pip install https://github.com/Lasagne/Lasagne/archive/master.zip
 
 #Running examples
 
