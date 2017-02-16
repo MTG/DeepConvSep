@@ -84,13 +84,13 @@ The code to for feature computation and training the network can be found in "ex
 
 For iKala :
 
-    python -m examples.ikala.compute_features
-    python -m examples.ikala.trainCNN
+    python -m examples.ikala.compute_features --db '/path/to/iKala/'
+    python -m examples.ikala.trainCNN --db '/path/to/iKala/'
 
 For SiSEC MUS using DSD100 dataset :
 
-    python -m examples.dsd100.compute_features
-    python -m examples.dsd100.trainCNN
+    python -m examples.dsd100.compute_features --db '/path/to/DSD100/'
+    python -m examples.dsd100.trainCNN --db '/path/to/DSD100/'
 
 
 #Evaluation 
