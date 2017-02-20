@@ -30,6 +30,7 @@ import climate
 if __name__ == "__main__": 
     if len(sys.argv)>-1:
         climate.add_arg('--db', help="the dataset path")
+        climate.add_arg('--feature_path', help="the path where to save the features")
     db=None
     kwargs = climate.parse_args()
     if kwargs.__getattribute__('db'):

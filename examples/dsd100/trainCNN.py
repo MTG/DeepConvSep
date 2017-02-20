@@ -381,6 +381,7 @@ if __name__ == "__main__":
         climate.add_arg('--overlap', help="overlap time context for training")
         climate.add_arg('--nprocs', help="number of processor to parallelize file reading")
         climate.add_arg('--scale_factor', help="scale factor for the data")
+        climate.add_arg('--feature_path', help="the path where to load the features from")
         db=None
         kwargs = climate.parse_args()
         if kwargs.__getattribute__('db'):
