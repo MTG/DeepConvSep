@@ -67,7 +67,7 @@ if __name__ == "__main__":
     tt = None
     dirlist = os.listdir(os.path.join(mixture_directory,"Dev"))
     dirlist.append(os.listdir(os.path.join(mixture_directory,"Test")))
-    for f in sort(dirlist):
+    for f in sorted(dirlist):
         if not f.startswith('.'):
             for co in combo:       
                 c = np.array(co)   
