@@ -387,6 +387,10 @@ if __name__ == "__main__":
             db = kwargs.__getattribute__('db')
         else:
             db='/home/marius/Documents/Database/DSD100/'  
+        if kwargs.__getattribute__('feature_path'):
+            feature_path = kwargs.__getattribute__('feature_path')
+        else:
+            feature_path=os.path.join(db,'transforms','t1') 
         assert os.path.isdir(db), "Please input the directory for the DSD100 dataset with --db path_to_iKala"  
         if kwargs.__getattribute__('model'):
             model = kwargs.__getattribute__('model')
@@ -423,10 +427,8 @@ if __name__ == "__main__":
 
     #tt object needs to be the same as the one in compute_features
     tt = transformFFT(frameSize=1024, hopSize=512, sampleRate=44100, window=blackmanharris)
-  
-    dirtt=os.path.join(db,'transforms/t1/') 
 
-    ld1 = LargeDataset(path_transform_in=dirtt, nsources=4, batch_size=batch_size, batch_memory=batch_memory, time_context=time_context, overlap=overlap, nprocs=nprocs,mult_factor_in=scale_factor,mult_factor_out=scale_factor)
+    ld1 = LargeDataset(path_transform_in=feature_path, nsources=4, batch_size=batch_size, batch_memory=batch_memory, time_context=time_context, overlap=overlap, nprocs=nprocs,mult_factor_in=scale_factor,mult_factor_out=scale_factor)
     logging.info("  Maximum:\t\t{:.6f}".format(ld1.getMax()))
     logging.info("  Mean:\t\t{:.6f}".format(ld1.getMean()))
     logging.info("  Standard dev:\t\t{:.6f}".format(ld1.getStd()))
