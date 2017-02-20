@@ -67,5 +67,5 @@ if __name__ == "__main__":
             if not os.path.exists(feature_path):
                 os.makedirs(feature_path)
             #compute the STFT and write the .data file in the folder feature_path
-            tt.compute_transform(audio,feature_path+f.replace('.wav','.data'),pitch=lines[np.newaxis,np.newaxis,:],phase=False)
+            tt.compute_transform(audio,os.path.join(feature_path,f.replace('.wav','.data')),pitch=lines[np.newaxis,np.newaxis,:],phase=False)
        
