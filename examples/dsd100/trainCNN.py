@@ -424,7 +424,7 @@ if __name__ == "__main__":
         if kwargs.__getattribute__('scale_factor'):
             scale_factor = int(kwargs.__getattribute__('scale_factor')) 
         else:
-            scale_factor = 0.5
+            scale_factor = 0.3
 
     #tt object needs to be the same as the one in compute_features
     tt = transformFFT(frameSize=1024, hopSize=512, sampleRate=44100, window=blackmanharris)

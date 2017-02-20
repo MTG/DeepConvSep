@@ -46,8 +46,6 @@ if __name__ == "__main__":
     mixture_directory=os.path.join(db,'Mixtures')
     source_directory=os.path.join(db,'Sources')
 
-
-    
     tt = None
     dirlist = os.listdir(os.path.join(mixture_directory,"Dev"))
     #dirlist.append(os.listdir(os.path.join(mixture_directory,"Test"))) #we do not include the test dir
@@ -99,7 +97,7 @@ if __name__ == "__main__":
                 if not os.path.exists(feature_path):
                     os.makedirs(feature_path)
                 #compute the STFT and write the .data file in the subfolder /transform/t1/ of the iKala folder
-                tt.compute_transform(audio,feature_path+f+"_"+str(i)+'.data',phase=False)
+                tt.compute_transform(audio,os.path.join(feature_path,f+"_"+str(i)+'.data'),phase=False)
                 audio = None
 
             #rest of file
@@ -112,7 +110,7 @@ if __name__ == "__main__":
             audio[:,4]=others[sampleRate*30*(i+1):]
             
             #compute the STFT and write the .data file in the subfolder /transform/t1/ of the iKala folder
-            tt.compute_transform(audio,feature_path+f+"_"+str(i+1)+'.data',phase=False)
+            tt.compute_transform(audio,os.path.join(feature_path,f+"_"+str(i+1)+'.data'),phase=False)
             audio = None
             rest = None 
             mix_raw = None

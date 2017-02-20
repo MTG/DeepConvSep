@@ -130,7 +130,7 @@ if __name__ == "__main__":
                     
                     audio[:,0] = audio[:,0] + c[i,1] * segment[:size]
                     audio[:,i+1] = c[i,1] * segment[:size]
-        
+
                 #Take chunks of 30 secs
                 for i in range(number_of_blocks):
                     audio = np.zeros((sampleRate*30,5))
@@ -143,7 +143,7 @@ if __name__ == "__main__":
                     if not os.path.exists(feature_path):
                         os.makedirs(feature_path)
                     #compute the STFT and write the .data file in the subfolder /transform/t1/ of the iKala folder
-                    tt.compute_transform(audio,feature_path+f+"_"+str(i)+'.data',phase=False)
+                    tt.compute_transform(audio,os.path.join(feature_path,f+"_"+str(i)+'.data'),phase=False)
                     audio = None
 
                 #rest of file
@@ -156,7 +156,7 @@ if __name__ == "__main__":
                 audio[:,4]=others[sampleRate*30*(i+1):]
                 
                 #compute the STFT and write the .data file in the subfolder /transform/t1/ of the iKala folder
-                tt.compute_transform(audio,feature_path+f+"_"+str(i+1)+'.data',phase=False)
+                tt.compute_transform(audio,os.path.join(feature_path,f+"_"+str(i+1)+'.data'),phase=False)
                 audio = None
                 rest = None 
                 mix_raw = None
