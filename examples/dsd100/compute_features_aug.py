@@ -25,6 +25,7 @@ import numpy as np
 import re
 from scipy.signal import blackmanharris as blackmanharris
 import climate
+import itertools as it
 
 
 if __name__ == "__main__": 
@@ -45,6 +46,7 @@ if __name__ == "__main__":
     
     mixture_directory=os.path.join(db,'Mixtures')
     source_directory=os.path.join(db,'Sources')
+    sources = ['vocals','bass','drums','other']
 
     #possible augmentations
     time_shifts=[0.,0.2]
@@ -66,70 +68,62 @@ if __name__ == "__main__":
     
     tt = None
     dirlist = os.listdir(os.path.join(mixture_directory,"Dev"))
-    dirlist.append(os.listdir(os.path.join(mixture_directory,"Test")))
+    dirlist.extend(os.listdir(os.path.join(mixture_directory,"Test")))
+    dev_directory = os.listdir(os.path.join(mixture_directory,"Dev"))
+    test_directory = os.listdir(os.path.join(mixture_directory,"Test"))
     for f in sorted(dirlist):
         if not f.startswith('.'):
             for co in combo:       
-                c = np.array(co)   
-                #read the mix audio file
-                mix_raw, sampleRate, bitrate = util.readAudioScipy(os.path.join(mixture_directory,"Dev",f,"mixture.wav"))
-                
-                if mix_raw.shape[1]>1:
-                    mix_raw[:,0] = (mix_raw[:,0] + mix_raw[:,1]) / 2
-                    mix_raw = mix_raw[:,0]
+                c = np.array(co)  
 
-                number_of_blocks=int(len(mix_raw)/(float(sampleRate)*30.0))
-                last_block=int(len(mix_raw)%float(sampleRate))
+                if f in dev_directory:
+                    song_dir=os.path.join(source_directory,"Dev",f)
+                else:
+                    song_dir=os.path.join(source_directory,"Test",f) 
+
+                #read the mix audio file
+                # mix_raw, sampleRate, bitrate = util.readAudioScipy(os.path.join(song_dir,"mixture.wav"))
+                
+                # if mix_raw.shape[1]>1:
+                #     mix_raw[:,0] = (mix_raw[:,0] + mix_raw[:,1]) / 2
+                #     mix_raw = mix_raw[:,0]               
 
                 #read the sources audio files
-                vocals, sampleRate, bitrate = util.readAudioScipy(os.path.join(source_directory,"Dev",f,"vocals.wav"))
+                vocals, sampleRate, bitrate = util.readAudioScipy(os.path.join(song_dir,"vocals.wav"))
                 if vocals.shape[1]>1:
                     vocals[:,0] = (vocals[:,0] + vocals[:,1]) / 2
                     vocals = vocals[:,0]
-                bass, sampleRate, bitrate = util.readAudioScipy(os.path.join(source_directory,"Dev",f,"bass.wav"))
-                if bass.shape[1]>1:
-                    bass[:,0] = (bass[:,0] + bass[:,1]) / 2
-                    bass = bass[:,0]
-                drums, sampleRate, bitrate = util.readAudioScipy(os.path.join(source_directory,"Dev",f,"drums.wav"))
-                if drums.shape[1]>1:
-                    drums[:,0] = (drums[:,0] + drums[:,1]) / 2
-                    drums = drums[:,0]
-                others, sampleRate, bitrate = util.readAudioScipy(os.path.join(source_directory,"Dev",f,"other.wav"))
-                if others.shape[1]>1:
-                    others[:,0] = (others[:,0] + others[:,1]) / 2
-                    others = others[:,0]
 
+                #initialize variables
+                number_of_blocks=int(len(vocals)/(float(sampleRate)*30.0))
+                last_block=int(len(vocals)%float(sampleRate))
                 if tt is None:
                     #initialize the transform object which will compute the STFT
                     tt=transformFFT(frameSize=1024, hopSize=512, sampleRate=sampleRate, window=blackmanharris)
-     
+                nframes = int(np.ceil(len(vocals) / np.double(tt.hopSize))) + 2
+                size = int(len(vocals)-int(np.max(np.array(c[:,0]))*sampleRate))
+
+                bass, sampleRate, bitrate = util.readAudioScipy(os.path.join(song_dir,"bass.wav"))
+                if bass.shape[1]>1:
+                    bass[:,0] = (bass[:,0] + bass[:,1]) / 2
+                    bass = bass[:,0]
+                drums, sampleRate, bitrate = util.readAudioScipy(os.path.join(song_dir,"drums.wav"))
+                if drums.shape[1]>1:
+                    drums[:,0] = (drums[:,0] + drums[:,1]) / 2
+                    drums = drums[:,0]
+                others, sampleRate, bitrate = util.readAudioScipy(os.path.join(song_dir,"other.wav"))
+                if others.shape[1]>1:
+                    others[:,0] = (others[:,0] + others[:,1]) / 2
+                    others = others[:,0]
+                
                 assert sampleRate == 44100,"Sample rate needs to be 44100"
 
-                nframes = int(np.ceil(len(mix_raw) / np.double(tt.hopSize))) + 2
-                size = int(len(mix_raw)-int(np.max(np.array(c[:,0]))*sampleRate))
-
-                for i in range(4): #for all the 4 sources
-                    #circular shift
-                    if c[i,0] == 0:
-                        if len(mix_raw) > size:
-                            segment = mix_raw[:size]
-                        else:
-                            segment = np.zeros(size)
-                            segment[:len(mix_raw)] = mix_raw
-                    elif c[i,0] < 0:
-                        seg_idx = int(abs(c[i,0]*sampleRate))
-                        segment = np.pad(mix_raw,((0,seg_idx+np.maximum(0,size-len(mix_raw)))), mode='constant')
-                        if len(segment)<(size+seg_idx):
-                            segment = np.pad(segment,((0,size+seg_idx - len(segment))), mode='constant')
-                        segment = segment[seg_idx:size+seg_idx]
-                    else:
-                        segment = np.pad(mix_raw,((int(c[i,0]*sampleRate),0)), mode='constant')
-                        if len(segment)<size:
-                            segment = np.pad(segment,((0,size - len(segment))), mode='constant')
-                        segment = segment[:size]
-                    
-                    audio[:,0] = audio[:,0] + c[i,1] * segment[:size]
-                    audio[:,i+1] = c[i,1] * segment[:size]
+                #apply circular shift
+                vocals = c[0,1]*util.circular_shift(vocals,min_size=size,cs=c[0,0],sampleRate=sampleRate)
+                bass = c[1,1]*util.circular_shift(bass,min_size=size,cs=c[1,0],sampleRate=sampleRate)
+                drums = c[2,1]*util.circular_shift(drums,min_size=size,cs=c[2,0],sampleRate=sampleRate)
+                others = c[3,1]*util.circular_shift(others,min_size=size,cs=c[3,0],sampleRate=sampleRate)
+                mix_raw = vocals + bass + drums + others
 
                 #Take chunks of 30 secs
                 for i in range(number_of_blocks):
@@ -143,7 +137,7 @@ if __name__ == "__main__":
                     if not os.path.exists(feature_path):
                         os.makedirs(feature_path)
                     #compute the STFT and write the .data file in the subfolder /transform/t1/ of the iKala folder
-                    tt.compute_transform(audio,os.path.join(feature_path,f+"_"+str(i)+'.data'),phase=False)
+                    tt.compute_transform(audio,os.path.join(feature_path,f+"_"+str(i)+str(c[:,0])+'.data'),phase=False)
                     audio = None
 
                 #rest of file
@@ -156,7 +150,7 @@ if __name__ == "__main__":
                 audio[:,4]=others[sampleRate*30*(i+1):]
                 
                 #compute the STFT and write the .data file in the subfolder /transform/t1/ of the iKala folder
-                tt.compute_transform(audio,os.path.join(feature_path,f+"_"+str(i+1)+'.data'),phase=False)
+                tt.compute_transform(audio,os.path.join(feature_path,f+"_"+str(i+1)+str(c[:,0])+'.data'),phase=False)
                 audio = None
                 rest = None 
                 mix_raw = None

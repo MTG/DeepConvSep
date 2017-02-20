@@ -89,6 +89,28 @@ def writeAudioScipy(fileout,audio_out,sampleRate,bitrate="int16"):
     scipy.io.wavfile.write(filename=fileout, rate=sampleRate, data=(audio_out*maxn).astype(bitrate))
 
 
+def circular_shift(audio,min_size,cs=0.1,sampleRate=44100):
+    if cs == 0:
+        if len(audio) > min_size:
+            segment = audio[:min_size]
+        else:
+            segment = np.zeros(min_size)
+            segment[:len(audio)] = audio
+    elif cs < 0:
+        seg_idx = int(abs(cs*sampleRate))
+        segment = np.pad(audio,((0,seg_idx+np.maximum(0,min_size-len(audio)))), mode='constant')
+        if len(segment)<(min_size+seg_idx):
+            segment = np.pad(segment,((0,min_size+seg_idx - len(segment))), mode='constant')
+        segment = segment[seg_idx:min_size+seg_idx]
+    else:
+        segment = np.pad(audio,((int(cs*sampleRate),0)), mode='constant')
+        if len(segment)<min_size:
+            segment = np.pad(segment,((0,min_size - len(segment))), mode='constant')
+        segment = segment[:min_size]
+
+    return segment
+
+
 class interpolate:
     def __init__(self,cqt,Ls):
         from scipy.interpolate import interp1d

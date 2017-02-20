@@ -289,8 +289,8 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
         dev_directory = os.listdir(os.path.join(testdir,"Dev"))
         test_directory = os.listdir(os.path.join(testdir,"Test")) #we do not include the test dir
         dirlist = []
-        dirlist.append(dev_directory)
-        dirlist.append(test_directory)
+        dirlist.extend(dev_directory)
+        dirlist.extend(test_directory)
         for f in sort(dirlist):
             if not f.startswith('.'):
                 if f in dev_directory:
