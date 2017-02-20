@@ -85,11 +85,13 @@ The code to for feature computation and training the network can be found in "ex
 For iKala :
 
     python -m examples.ikala.compute_features --db '/path/to/iKala/'
+    ### Replace gpu0 with cpu,gpu,cuda,gpu0 etc. depending on your system configuration
     THEANO_FLAGS=mode=FAST_RUN,device=gpu0,floatX=float32,lib.cnmem=0.95 python -m examples.ikala.trainCNN --db '/path/to/iKala/'
 
 For SiSEC MUS using DSD100 dataset :
 
     python -m examples.dsd100.compute_features --db '/path/to/DSD100/'
+    ### Replace gpu0 with cpu,gpu,cuda,gpu0 etc. depending on your system configuration
     THEANO_FLAGS=mode=FAST_RUN,device=gpu0,floatX=float32,lib.cnmem=0.95 python -m examples.dsd100.trainCNN --db '/path/to/DSD100/'
 
 
