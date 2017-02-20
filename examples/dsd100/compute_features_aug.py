@@ -79,14 +79,7 @@ if __name__ == "__main__":
                 if f in dev_directory:
                     song_dir=os.path.join(source_directory,"Dev",f)
                 else:
-                    song_dir=os.path.join(source_directory,"Test",f) 
-
-                #read the mix audio file
-                # mix_raw, sampleRate, bitrate = util.readAudioScipy(os.path.join(song_dir,"mixture.wav"))
-                
-                # if mix_raw.shape[1]>1:
-                #     mix_raw[:,0] = (mix_raw[:,0] + mix_raw[:,1]) / 2
-                #     mix_raw = mix_raw[:,0]               
+                    song_dir=os.path.join(source_directory,"Test",f)               
 
                 #read the sources audio files
                 vocals, sampleRate, bitrate = util.readAudioScipy(os.path.join(song_dir,"vocals.wav"))
