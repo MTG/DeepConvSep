@@ -120,6 +120,9 @@ The script takes as parameters the id of the file, the path to the dataset, and 
 
 For SiSEC-MUS/DSD100, use the scripts at the <a href="https://github.com/faroit/dsd100mat">web-page</a>.
 
+#Acknowledgments
+The TITANX used for this research was donated by the NVIDIA Corporation.
+
 #License
 
     Copyright (c) 2014-2017 
