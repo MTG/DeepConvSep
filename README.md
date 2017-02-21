@@ -9,6 +9,15 @@ In the "examples" directory we include examples for training neural networks for
 
 We provide code for separation using already trained models for different tasks.
 
+Separate music into vocals,bass,drums,accompaniment in examples/dsd100/separate_dsd.py :
+
+    python separate_dsd.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
+
+where : 
+- \<inputfile\> is the wav file to separate
+- \<outputdir\> is the output directory where to write the separation
+- \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOb281azdKc2tWbFk">this address</a>
+
 Singing voice source separation in examples/ikala/separate_ikala.py :
 
     python separate_ikala.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>

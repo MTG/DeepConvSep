@@ -240,6 +240,7 @@ def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 
     input_var2 = T.tensor4('inputs')
     target_var2 = T.tensor4('targets')
     rand_num = T.tensor4('rand_num')
+    source = ['vocals','bass','drums','other']
 
     eps=1e-8
     network2 = build_ca(input_var2,batch_size,time_context,input_size)    
@@ -300,13 +301,12 @@ def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 
         mm = overlapadd_multi(output,batches,nchunks,overlap=overlap)
 
         for i in range(mm.shape[0]):
-            audio_out=transform.compute_inverse(mm[i,:len(ph)]/scale_factor,ph)
+            audio_out=compute_inverse(mm[i,:len(ph)]/scale_factor,ph)
             if len(audio_out)>len(audioObj):
                 audio_out=audio_out[:len(audioObj)]
-            audio_out=essentia.array(audio_out)
             maxn = np.iinfo(np.int16).max  
             path, filename = os.path.split(filein)  
-            scipy.io.wavfile.write(filename=os.path.join(outdir,filename.replace(".wav",source[i]+".wav")), rate=sampleRate, data=(audio_out*maxn).astype('int16'))
+            scipy.io.wavfile.write(filename=os.path.join(outdir,filename.replace(".wav","_"+source[i]+".wav")), rate=sampleRate, data=(audio_out*maxn).astype('int16'))
             audio_out=None 
         audioObj = None
     else:

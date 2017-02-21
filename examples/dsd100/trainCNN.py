@@ -291,7 +291,7 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
         dirlist = []
         dirlist.extend(dev_directory)
         dirlist.extend(test_directory)
-        for f in sort(dirlist):
+        for f in sorted(dirlist):
             if not f.startswith('.'):
                 if f in dev_directory:
                     song=os.path.join(testdir,"Dev",f,"mixture.wav")
@@ -328,7 +328,6 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
                     audio_out=transform.compute_inverse(mm[i,:len(ph)]/scale_factor,ph)
                     if len(audio_out)>len(audio):
                         audio_out=audio_out[:len(audio)]
-                    audio_out=essentia.array(audio_out)
                     util.writeAudioScipy(os.path.join(dirout,source[i]),audio_out,sampleRate,bitrate)
                     audio_out=None 
                 audio = None
