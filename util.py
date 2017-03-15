@@ -25,6 +25,7 @@ import sys
 from os import listdir
 from os.path import isfile, join
 import cPickle as pickle
+from bisect import bisect_left, bisect_right
 import itertools as it
 from scipy.interpolate import interp1d,InterpolatedUnivariateSpline
 
@@ -515,3 +516,105 @@ def overlapadd_multi(fbatch,obatch,nchunks,overlap=10):
             i = i + 1 #index for each block
             start = start - overlap + time_context #starting point for each block
     return sep
+
+
+## read a txt containing midi notes : onset,offset,midinote
+def getMidi(instrument,FilePath,beginTime,finishTime,samplerate,hop,window,timeSpan_on,timeSpan_off,nframes):
+    #midifile = FilePath+instrument.replace('.txt','_1.txt')
+    midifile = os.path.join(FilePath,instrument + '.txt')
+    melodyFromFile = np.genfromtxt(midifile, comments='!', \
+      delimiter=',',names="a,b,c",dtype=["f","f","S3"])
+    melTimeStampsBeginO = melodyFromFile['a'].tolist()
+    melTimeStampsEndO = melodyFromFile['b'].tolist()
+    #startTime = np.maximum(bisect_right(melTimeStampsBegin,beginTime),bisect_right(melTimeStampsEnd,beginTime))
+    #endTime = np.minimum(bisect_left(melTimeStampsBegin,finishTime),bisect_left(melTimeStampsEnd,finishTime))
+    startTime = bisect_right(melTimeStampsEndO,beginTime)
+    endTime = bisect_left(melTimeStampsBeginO,finishTime)
+
+    if melTimeStampsEndO[startTime]<float(beginTime):
+        startTime=startTime+1
+    if endTime>=len(melTimeStampsBeginO):
+        endTime = len(melTimeStampsBeginO) - 1 
+    elif melTimeStampsBeginO[endTime]>float(finishTime):
+        endTime=endTime-1     
+    
+    if (startTime<endTime):
+        melTimeStampsBeginO = melTimeStampsBeginO[startTime:endTime+1] 
+        melTimeStampsBegin = [x - beginTime for x in melTimeStampsBeginO]
+        melTimeStampsEndO = melTimeStampsEndO[startTime:endTime+1]
+        melTimeStampsEnd = [x - beginTime for x in melTimeStampsEndO]
+        
+        for i in range(len(melTimeStampsBegin)):
+            if (melTimeStampsBegin[i] < 0):
+               melTimeStampsBegin[i] = 0.0
+            if (melTimeStampsEnd[i] < 0):
+               melTimeStampsEnd[i] = 0.0
+            if (melTimeStampsEnd[i] > (finishTime-beginTime)):
+               melTimeStampsEnd[i] = finishTime-beginTime
+            if (melTimeStampsBegin[i] > (finishTime-beginTime)):
+               melTimeStampsBegin[i] = finishTime-beginTime
+
+        #get the midi   
+        melNotesMIDI = melodyFromFile['c'].tolist()
+        melNotesMIDI = melNotesMIDI[startTime:endTime+1]
+        melIndex=[k for k in range(startTime,endTime+1)]
+
+        tframes = float(nframes)*float(hop) / float(samplerate)
+        #eliminate short notes
+        lenlist = len(melTimeStampsBegin)
+        i=0
+        while i<lenlist:
+            if (melTimeStampsEnd[i]<=0) \
+                or (melTimeStampsEnd[i]<=melTimeStampsBegin[i]) \
+                or (melTimeStampsBegin[i]>=tframes) \
+                or ((melTimeStampsEnd[i]-melTimeStampsBegin[i])<0.01) :
+                melTimeStampsBegin.pop(i)
+                melTimeStampsEnd.pop(i)
+                melNotesMIDI.pop(i)
+                melIndex.pop(i)
+                lenlist=lenlist-1
+                i=i-1
+            i=i+1
+
+        melody = np.zeros(nframes)
+        maxAllowed_on = int(round(timeSpan_on * float(samplerate / hop)))
+        maxAllowed_off = int(round(timeSpan_off * float(samplerate / hop)))
+        endMelody = int((finishTime-beginTime) * round(float(samplerate / hop)))
+        w = window/2/hop
+        for i in range(len(melTimeStampsEnd)):
+            melodyBegin = np.maximum(0,int(melTimeStampsBegin[i] * round(float(samplerate / hop))) - maxAllowed_on)
+            melodyEnd = np.minimum(nframes,np.minimum(endMelody,int(melTimeStampsEnd[i] * round(float(samplerate / hop))) + maxAllowed_off))
+            melody[melodyBegin:melodyEnd]=str2midi(melNotesMIDI[i])
+        
+        melodyBegin = [np.maximum(0,mel - timeSpan_on) for mel in melTimeStampsBegin]
+        melodyEnd = [np.minimum(finishTime-beginTime,mel + timeSpan_off) for mel in melTimeStampsEnd]
+        melNotes = [str2midi(n) for n in melNotesMIDI]
+        return melody,melodyBegin,melodyEnd,melNotes
+    else:
+        return []
+
+def getMidiLength(instrument,FilePath):
+    #midifile = FilePath+instrument.replace('.txt','_1.txt')
+    midifile = os.path.join(FilePath,instrument + '.txt')
+    melodyFromFile = np.genfromtxt(midifile, comments='!', \
+      delimiter=',',names="a,b,c",dtype=["f","f","S3"])
+    melTimeStampsBeginO = melodyFromFile['a'].tolist()
+    melTimeStampsEndO = melodyFromFile['b'].tolist()
+    return max(melTimeStampsEndO)
+    
+def str2midi(note_string):
+  """
+  Given a note string name (e.g. "Bb4"), returns its MIDI pitch number.
+  """
+  if note_string == "?":
+    return nan
+  data = note_string.strip().lower()
+  name2delta = {"c": -9, "d": -7, "e": -5, "f": -4, "g": -2, "a": 0, "b": 2}
+  accident2delta = {"b": -1, "#": 1, "x": 2}
+  accidents = list(it.takewhile(lambda el: el in accident2delta, data[2:]))
+  octave_delta = int(data[1]) - 4
+  return (MIDI_A4 +
+          name2delta[data[0]] + # Name
+          sum(accident2delta[ac] for ac in accidents) + # Accident
+          12 * octave_delta # Octave
+         )

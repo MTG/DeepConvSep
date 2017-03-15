@@ -36,7 +36,7 @@ if __name__ == "__main__":
     if kwargs.__getattribute__('db'):
         db = kwargs.__getattribute__('db')
     else:
-        db='/home/marius/Documents/Database/DSD100/'  
+        db='/home/user/Documents/Database/DSD100/'  
     if kwargs.__getattribute__('feature_path'):
         feature_path = kwargs.__getattribute__('feature_path')
     else:

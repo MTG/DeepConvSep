@@ -391,7 +391,7 @@ if __name__ == "__main__":
             feature_path = kwargs.__getattribute__('feature_path')
         else:
             feature_path=os.path.join(db,'transforms','t1') 
-        assert os.path.isdir(db), "Please input the directory for the DSD100 dataset with --db path_to_iKala"  
+        assert os.path.isdir(db), "Please input the directory for the DSD100 dataset with --db path_to_DSD100"  
         if kwargs.__getattribute__('model'):
             model = kwargs.__getattribute__('model')
         else:
@@ -433,14 +433,12 @@ if __name__ == "__main__":
     logging.info("  Mean:\t\t{:.6f}".format(ld1.getMean()))
     logging.info("  Standard dev:\t\t{:.6f}".format(ld1.getStd()))
 
-    if not os.path.exists(db+'output/'):
-        os.makedirs(db+'output/')
-    if not os.path.exists(db+'output/'+model):
-        os.makedirs(db+'output/'+model)
-    if not os.path.exists(db+'models/'):
-        os.makedirs(db+'models/')
+    if not os.path.exists(os.path.join(db,'output',model)):
+        os.makedirs(os.path.join(db,'output',model))
+    if not os.path.exists(os.path.join(db,'models')):
+        os.makedirs(os.path.join(db,'models'))
 
-    train_errs=train_auto(train=ld1,fun=build_ca,transform=tt,outdir=db+'output/'+model+"/",testdir=db+'Mixtures/',model=db+"models/"+"model_"+model+".pkl",num_epochs=nepochs,scale_factor=scale_factor)      
+    train_errs=train_auto(train=ld1,fun=build_ca,transform=tt,outdir=os.path.join(db,'output',model),testdir=os.path.join(db,'Mixtures'),model=os.path.join(db,'models',"model_"+model+".pkl"),num_epochs=nepochs,scale_factor=scale_factor)      
     f = file(db+"models/"+"loss_"+model+".data", 'wb')
     cPickle.dump(train_errs,f,protocol=cPickle.HIGHEST_PROTOCOL)
     f.close()

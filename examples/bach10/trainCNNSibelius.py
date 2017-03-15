@@ -43,7 +43,7 @@ from lasagne.layers import ReshapeLayer,Layer
 from lasagne.init import Normal
 from lasagne.regularization import regularize_layer_params_weighted, l2, l1
 from lasagne.regularization import regularize_layer_params
-
+import multiprocessing
 
 logging = climate.get_logger('trainer')
 
@@ -84,41 +84,46 @@ def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=513):
     """
 
     input_shape=(batch_size,1,time_context,feat_size)
+    #scaled_tanh = lasagne.nonlinearities.ScaledTanH(scale_in=1, scale_out=0.5)
 
-    #input layer
     l_in_1 = lasagne.layers.InputLayer(shape=input_shape, input_var=input_var)
 
-    #vertical convolution layer
-    l_conv1 = lasagne.layers.Conv2DLayer(l_in_1, num_filters=30, filter_size=(1,30),stride=(1,3), pad='valid', nonlinearity=None)
+    l_conv1 = lasagne.layers.Conv2DLayer(l_in_1, num_filters=30, filter_size=(1,30),stride=(1,4), pad='valid', nonlinearity=None)
     l_conv1b= lasagne.layers.BiasLayer(l_conv1)
 
-    #horizontal convolution layer
-    l_conv2 = lasagne.layers.Conv2DLayer(l_conv1b, num_filters=30, filter_size=(10,20),stride=(1,1), pad='valid', nonlinearity=None)
+    l_conv2 = lasagne.layers.Conv2DLayer(l_conv1b, num_filters=30, filter_size=(int(2*time_context/3),1),stride=(1,1), pad='valid', nonlinearity=None)
     l_conv2b= lasagne.layers.BiasLayer(l_conv2)
 
-    #bottlneck layer
     l_fc=lasagne.layers.DenseLayer(l_conv2b,256)
-
-    #build output for source1
+   
     l_fc11=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
     l_reshape1 = lasagne.layers.ReshapeLayer(l_fc11,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse11=lasagne.layers.InverseLayer(l_reshape1, l_conv2)
     l_inverse41=lasagne.layers.InverseLayer(l_inverse11, l_conv1)
-
-    #build output for source1
+  
     l_fc12=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
     l_reshape2 = lasagne.layers.ReshapeLayer(l_fc12,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse12=lasagne.layers.InverseLayer(l_reshape2, l_conv2)
     l_inverse42=lasagne.layers.InverseLayer(l_inverse12, l_conv1)
 
-    #build final output 
-    l_merge=lasagne.layers.ConcatLayer([l_inverse41,l_inverse42],axis=1)
+    l_fc13=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
+    l_reshape3 = lasagne.layers.ReshapeLayer(l_fc13,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
+    l_inverse13=lasagne.layers.InverseLayer(l_reshape3, l_conv2)
+    l_inverse43=lasagne.layers.InverseLayer(l_inverse13, l_conv1)
+
+    l_fc14=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
+    l_reshape4 = lasagne.layers.ReshapeLayer(l_fc14,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
+    l_inverse14=lasagne.layers.InverseLayer(l_reshape4, l_conv2)
+    l_inverse44=lasagne.layers.InverseLayer(l_inverse14, l_conv1)
+
+    l_merge=lasagne.layers.ConcatLayer([l_inverse41,l_inverse42,l_inverse43,l_inverse44],axis=1)
+
     l_out = lasagne.layers.NonlinearityLayer(lasagne.layers.BiasLayer(l_merge), nonlinearity=lasagne.nonlinearities.rectify)
-   
+  
     return l_out
 
 
-def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",scale_factor=0.3,load=False,skip_train=False,skip_sep=False):
+def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1,testfile_list1,num_epochs=30,model="1.pkl",scale_factor=0.3,load=False,skip_train=False,skip_sep=False):
     """
     Trains a network built with \"fun\" with the data generated with \"train\"
     and then separates the files in \"testdir\",writing the result in \"outdir\"
@@ -153,9 +158,7 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
     rand_num = T.tensor4('rand_num')
     
     eps=1e-8
-    alpha=0.9
-    beta_acc=0.005
-    beta_voc=0.02
+    alpha=0.001
 
     network2 = fun(input_var=input_var2,batch_size=train.batch_size,time_context=train.time_context,feat_size=train.input_size)
     
@@ -167,26 +170,32 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
 
     rand_num = np.random.uniform(size=(train.batch_size,1,train.time_context,train.input_size))
 
-    voc=prediction2[:,0:1,:,:]+eps*rand_num
-    acco=prediction2[:,1:2,:,:]+eps*rand_num
+    s1=prediction2[:,0:1,:,:]
+    s2=prediction2[:,1:2,:,:]
+    s3=prediction2[:,2:3,:,:]
+    s4=prediction2[:,3:4,:,:]
 
-    mask1=voc/(voc+acco)
-    mask2=acco/(voc+acco)
+    mask1=s1/(s1+s2+s3+s4+eps*rand_num)
+    mask2=s2/(s1+s2+s3+s4+eps*rand_num)
+    mask3=s3/(s1+s2+s3+s4+eps*rand_num)
+    mask4=s4/(s1+s2+s3+s4+eps*rand_num)
 
-    vocals=mask1*input_var2[:,0:1,:,:]
-    acc=mask2*input_var2[:,0:1,:,:]
-    
-    train_loss_recon_vocals = lasagne.objectives.squared_error(vocals,target_var2[:,0:1,:,:])
-    train_loss_recon_acc = alpha * lasagne.objectives.squared_error(acc,target_var2[:,1:2,:,:])    
-    train_loss_recon_neg_voc = beta_voc * lasagne.objectives.squared_error(vocals,target_var2[:,1:2,:,:])
-    train_loss_recon_neg_acc = beta_acc * lasagne.objectives.squared_error(acc,target_var2[:,0:1,:,:])
+    source1=mask1*input_var2[:,0:1,:,:]
+    source2=mask2*input_var2[:,0:1,:,:]
+    source3=mask3*input_var2[:,0:1,:,:]
+    source4=mask4*input_var2[:,0:1,:,:]
 
-    vocals_error=train_loss_recon_vocals.sum()  
-    acc_error=train_loss_recon_acc.sum()  
-    negative_error_voc=train_loss_recon_neg_voc.sum()
-    negative_error_acc=train_loss_recon_neg_acc.sum()
-    
-    loss=abs(vocals_error+acc_error-negative_error_voc)
+    train_loss_recon1 = lasagne.objectives.squared_error(source1,target_var2[:,0:1,:,:])
+    train_loss_recon2 = lasagne.objectives.squared_error(source2,target_var2[:,1:2,:,:]) 
+    train_loss_recon3 = lasagne.objectives.squared_error(source3,target_var2[:,2:3,:,:])
+    train_loss_recon4 = lasagne.objectives.squared_error(source4,target_var2[:,3:4,:,:])      
+
+    error1=train_loss_recon1.sum()  
+    error2=train_loss_recon2.sum()  
+    error3=train_loss_recon3.sum()  
+    error4=train_loss_recon4.sum()
+
+    loss=abs(error1+error2+error3+error4) 
 
     params1 = lasagne.layers.get_all_params(network2, trainable=True)
 
@@ -194,13 +203,11 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
 
     train_fn = theano.function([input_var2,target_var2], loss, updates=updates,allow_input_downcast=True)
 
-    train_fn1 = theano.function([input_var2,target_var2], [vocals_error,acc_error,negative_error_voc,negative_error_acc], allow_input_downcast=True)
+    train_fn1 = theano.function([input_var2,target_var2], [error1,error2,error3,error4], allow_input_downcast=True)
 
-    predict_function2=theano.function([input_var2],[vocals,acc],allow_input_downcast=True)
-    predict_function3=theano.function([input_var2],[prediction2[:,0:1,:,:],prediction2[:,1:2,:,:]],allow_input_downcast=True)
+    predict_function2=theano.function([input_var2],[source1,source2,source3,source4],allow_input_downcast=True)
 
     losser=[]
-    loss2=[]
 
     if not skip_train:
 
@@ -209,56 +216,110 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
 
             train_err = 0
             train_batches = 0
-            vocals_err=0
-            acc_err=0        
-            beta_voc=0
-            beta_acc=0
+            err1=0
+            err2=0     
+            err3=0
+            err4=0
             start_time = time.time()
             for batch in range(train.iteration_size): 
                 inputs, target = train()
                 
                 jump = inputs.shape[2]
-                targets=np.ndarray(shape=(inputs.shape[0],2,inputs.shape[1],inputs.shape[2]))
+                targets=np.ndarray(shape=(inputs.shape[0],4,inputs.shape[1],inputs.shape[2]))
                 inputs=np.reshape(inputs,(inputs.shape[0],1,inputs.shape[1],inputs.shape[2]))          
-
+            
                 targets[:,0,:,:]=target[:,:,:jump]
-                targets[:,1,:,:]=target[:,:,jump:jump*2]         
+                targets[:,1,:,:]=target[:,:,jump:jump*2]  
+                targets[:,2,:,:]=target[:,:,jump*2:jump*3] 
+                targets[:,3,:,:]=target[:,:,jump*3:jump*4]        
                 target=None
-        
+                #gc.collect()
+         
                 train_err+=train_fn(inputs,targets)
-                [vocals_erre,acc_erre,betae_voc,betae_acc]=train_fn1(inputs,targets)
-                vocals_err += vocals_erre
-                acc_err += acc_erre           
-                beta_voc+= betae_voc
-                beta_acc+= betae_acc
+                [e1,e2,e3,e4]=train_fn1(inputs,targets)
+                err1 += e1
+                err2 += e2
+                err3 += e3
+                err4 += e4
                 train_batches += 1
             
             logging.info("Epoch {} of {} took {:.3f}s".format(
                 epoch + 1, num_epochs, time.time() - start_time))
             logging.info("  training loss:\t\t{:.6f}".format(train_err/train_batches))
-            logging.info("  training loss for vocals:\t\t{:.6f}".format(vocals_err/train_batches))
-            logging.info("  training loss for acc:\t\t{:.6f}".format(acc_err/train_batches))
-            logging.info("  Beta component for voice:\t\t{:.6f}".format(beta_voc/train_batches))
-            logging.info("  Beta component for acc:\t\t{:.6f}".format(beta_acc/train_batches))
+            logging.info("  training loss for bassoon:\t\t{:.6f}".format(err1/train_batches))
+            logging.info("  training loss for clarinet:\t\t{:.6f}".format(err2/train_batches))
+            logging.info("  training loss for saxophone:\t\t{:.6f}".format(err3/train_batches))
+            logging.info("  training loss for violin:\t\t{:.6f}".format(err4/train_batches))
             losser.append(train_err / train_batches)
             save_model(model,network2)
 
     if not skip_sep:
 
         logging.info("Separating")
-        for f in os.listdir(testdir):
-            if f.endswith(".wav"):
-                audioObj, sampleRate, bitrate = util.readAudioScipy(os.path.join(testdir,f))
+        sources = ['bassoon','clarinet','saxphone','violin']
+        sources_midi = ['bassoon','clarinet','saxophone','violin']
+
+        for f in testfile_list:
+            for i in range(len(sources)):
+                filename=os.path.join(testdir,f,f+'-'+sources[i]+'.wav')
+                audioObj, sampleRate, bitrate = util.readAudioScipy(filename)
                 
                 assert sampleRate == 44100,"Sample rate needs to be 44100"
 
-                audio = audioObj[:,0] + audioObj[:,1]
-                audioObj = None
+                nframes = int(np.ceil(len(audioObj) / np.double(tt.hopSize))) + 2
+                if i==0:
+                    audio = np.zeros(audioObj[0].shape[0])
+                    #melody = np.zeros((len(sources),1,nframes))
+                audio = audio + audioObj[0][:,0]
+                audioObj=None 
+                
+            mag,ph=transform.compute_file(audio,phase=True)
+            mag=scale_factor*mag.astype(np.float32)
+
+            batches,nchunks = util.generate_overlapadd(mag,input_size=mag.shape[-1],time_context=train.time_context,overlap=train.overlap,batch_size=train.batch_size,sampleRate=44100)
+            output=[]
+            #output1=[]
+
+            batch_no=1
+            for batch in batches:
+                batch_no+=1
+                start_time=time.time()
+                output.append(predict_function2(batch))
+
+            output=np.array(output)
+            mm=util.overlapadd_multi(output,batches,nchunks,overlap=train.overlap)
+            for i in range(len(sources)):
+                audio_out=transform.compute_inverse(mm[i,:len(ph)]/scale_factor,ph)
+                if len(audio_out)>len(audio):
+                    audio_out=audio_out[:len(audio)]
+                util.writeAudioScipy(os.path.join(outdir,f+'-'+sources[i]+'.wav'),audio_out,sampleRate,bitrate)
+                audio_out=None 
+        
+        style = ['fast','slow','original']
+        if not os.path.exists(outdir1):
+            os.makedirs(outdir1)
+        for s in style:
+            for f in testfile_list1:
+                for i in range(len(sources)):
+                    filename=os.path.join(testdir1,f,f+'_'+s+'_'+sources_midi[i]+'.wav')
+                    audioObj = loader()
+                    sampleRate=audioObj[1]
+                    audioObj, sampleRate, bitrate = util.readAudioScipy(filename)
+                    
+                    assert sampleRate == 44100,"Sample rate needs to be 44100"
+
+                    nframes = int(np.ceil(len(audioObj) / np.double(tt.hopSize))) + 2
+                   
+                    if i==0:
+                        audio = np.zeros(audioObj[0].shape[0])
+                        #melody = np.zeros((len(sources),1,nframes))
+                    audio = audio + audioObj[0][:,0]
+                    audioObj=None 
+                    
                 mag,ph=transform.compute_file(audio,phase=True)
-         
                 mag=scale_factor*mag.astype(np.float32)
 
-                batches,nchunks = util.generate_overlapadd(mag,input_size=mag.shape[-1],time_context=train.time_context,overlap=train.overlap,batch_size=train.batch_size,sampleRate=sampleRate)
+                batches,nchunks = util.generate_overlapadd(mag,input_size=mag.shape[-1],time_context=train.time_context,overlap=train.overlap,batch_size=train.batch_size,sampleRate=44100)
                 output=[]
 
                 batch_no=1
@@ -268,21 +329,14 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
                     output.append(predict_function2(batch))
 
                 output=np.array(output)
-                bmag,mm=util.overlapadd(output,batches,nchunks,overlap=train.overlap)
-                
-                audio_out=transform.compute_inverse(bmag[:len(ph)]/scale_factor,ph)
-                if len(audio_out)>len(audio):
-                    audio_out=audio_out[:len(audio)]
-                audio_out=essentia.array(audio_out)
-                audio_out2= transform.compute_inverse(mm[:len(ph)]/scale_factor,ph) 
-                if len(audio_out2)>len(audio):
-                    audio_out2=audio_out2[:len(audio)]  
-                audio_out2=essentia.array(audio_out2) 
-                #write audio files
-                util.writeAudioScipy(os.path.join(outdir,f.replace(".wav","-voice.wav")),audio_out,sampleRate,bitrate)
-                util.writeAudioScipy(os.path.join(outdir,f.replace(".wav","-music.wav")),audio_out2,sampleRate,bitrate)
-                audio_out=None 
-                audio_out2=None   
+                mm=util.overlapadd_multi(output,batches,nchunks,overlap=train.overlap)
+                for i in range(len(sources)):
+                    audio_out=transform.compute_inverse(mm[i,:len(ph)]/scale_factor,ph)
+                    if len(audio_out)>len(audio):
+                        audio_out=audio_out[:len(audio)]
+                    filename=os.path.join(outdir1,f+'_'+s+'_'+sources_midi[i]+'.wav')
+                    util.writeAudioScipy(filename,audio_out,sampleRate,bitrate)
+                    audio_out=None 
 
     return losser  
 
@@ -291,16 +345,13 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
 
 if __name__ == "__main__": 
     """
-    Source separation for the iKala dataset.
-    2nd place MIREX Singing voice separation 2016
-    http://www.music-ir.org/mirex/wiki/2016:Singing_Voice_Separation_Results
+    Separating Bach10 chorales using the synthesized version with Sibelius
+    http://music.cs.northwestern.edu/data/Bach10.html
 
     More details in the following article:
-    P. Chandna, M. Miron, J. Janer, and E. Gomez,
-    \“Monoaural audio source separation using deep convolutional neural networks,\” 
-    International Conference on Latent Variable Analysis and Signal Separation, 2017.
-
-    Given the features computed previusly with compute_features, train a network and perform the separation.
+    
+    Given the features computed previusly with compute_features_bach10rwc with --original 0, train a network and perform the separation.
+    Given the features computed previusly with compute_features_bach10sibelius, train a network and perform the separation.
     
     Parameters
     ----------
@@ -334,21 +385,22 @@ if __name__ == "__main__":
         climate.add_arg('--nprocs', help="number of processor to parallelize file reading")
         climate.add_arg('--scale_factor', help="scale factor for the data")
         climate.add_arg('--feature_path', help="the path where to load the features from")
+        climate.add_arg('--scale_factor_test', help="scale factor for the test data")
         db=None
         kwargs = climate.parse_args()
         if kwargs.__getattribute__('db'):
             db = kwargs.__getattribute__('db')
-        # else:
-        #     db='/home/marius/Documents/Database/iKala/'  
+        else:
+            db='/home/user/Documents/Database/Bach10/'  
         if kwargs.__getattribute__('feature_path'):
             feature_path = kwargs.__getattribute__('feature_path')
         else:
-            feature_path=os.path.join(db,'transforms','t1') 
-        assert os.path.isdir(db), "Please input the directory for the iKala dataset with --db path_to_iKala"  
+            feature_path=os.path.join(db,'Source separation','transforms','t3_synth_aug_more') 
+        assert os.path.isdir(db), "Please input the directory for the DSD100 dataset with --db path_to_Bach10"  
         if kwargs.__getattribute__('model'):
             model = kwargs.__getattribute__('model')
         else:
-            model="fft_1024"    
+            model="fft_synth_one_aug_more_4096_blind_nomp_all_gt"    
         if kwargs.__getattribute__('batch_size'):
             batch_size = int(kwargs.__getattribute__('batch_size')) 
         else:
@@ -364,11 +416,11 @@ if __name__ == "__main__":
         if kwargs.__getattribute__('overlap'):
             overlap = int(kwargs.__getattribute__('overlap')) 
         else:
-            overlap = 20
+            overlap = 25
         if kwargs.__getattribute__('nprocs'):
             nprocs = int(kwargs.__getattribute__('nprocs')) 
         else:
-            nprocs = 7
+            nprocs = multiprocessing.cpu_count()-1
         if kwargs.__getattribute__('nepochs'):
             nepochs = int(kwargs.__getattribute__('nepochs')) 
         else:
@@ -377,23 +429,43 @@ if __name__ == "__main__":
             scale_factor = int(kwargs.__getattribute__('scale_factor')) 
         else:
             scale_factor = 0.3
+        if kwargs.__getattribute__('scale_factor_test'):
+            scale_factor_test = int(kwargs.__getattribute__('scale_factor_test')) 
+        else:
+            scale_factor_test = 0.2
+
+    style = ['original']
+    path_in = []
+    testfile_list = []
+
+    for f in sorted(os.listdir(os.path.join(db,'Sources'))):
+        if os.path.isdir(os.path.join(db,'Sources',f)) and f[0].isdigit():
+            testfile_list.append(f)  
+
+    for s in style:
+        if os.path.exists(os.path.join(feature_path,s)):
+            path_in.append(os.path.join(feature_path,s))
 
     #tt object needs to be the same as the one in compute_features
-    tt = transformFFT(frameSize=1024, hopSize=512, sampleRate=44100, window=blackmanharris)
-    pitchhop=0.032*float(tt.sampleRate) #seconds to frames   
+    tt=transformFFT(frameSize=4096, hopSize=512, sampleRate=44100, window=blackmanharris)
 
-    ld1 = LargeDataset(path_transform_in=feature_path, batch_size=batch_size, batch_memory=batch_memory, time_context=time_context, overlap=overlap, nprocs=nprocs,mult_factor_in=scale_factor,mult_factor_out=scale_factor)
+    ld1 = LargeDataset(path_transform_in=path_in, nsources=4, batch_size=batch_size, batch_memory=batch_memory, time_context=time_context, overlap=overlap, nprocs=nprocs,mult_factor_in=scale_factor,mult_factor_out=scale_factor)
     logging.info("  Maximum:\t\t{:.6f}".format(ld1.getMax()))
     logging.info("  Mean:\t\t{:.6f}".format(ld1.getMean()))
     logging.info("  Standard dev:\t\t{:.6f}".format(ld1.getStd()))
 
+    
     if not os.path.exists(os.path.join(db,'output',model)):
         os.makedirs(os.path.join(db,'output',model))
     if not os.path.exists(os.path.join(db,'models')):
         os.makedirs(os.path.join(db,'models'))
+    if not os.path.exists(os.path.join(db,'output',model+"_original")):
+        os.makedirs(os.path.join(db,'output',model+"_original"))
 
-    train_errs=train_auto(train=ld1,fun=build_ca,transform=tt,outdir=os.path.join(db,'output',model),testdir=os.path.join(db,'Wavfile'),model=os.path.join(db,'models',"model_"+model+".pkl"),num_epochs=nepochs,scale_factor=scale_factor)      
-    f = file(db+"models/"+"loss_"+model+".data", 'wb')
+    train_errs=train_auto(train=ld1,fun=build_ca,transform=tt,outdir=os.path.join(db,'output',model),testdir=os.path.join(db,'Sources'),testfile_list=testfile_list,\
+        outdir1=os.path.join(db,'output',model+"_original"),testdir1=os.path.join(db,'Source separation'),testfile_list1=testfile_list,
+        model=os.path.join(db,"models","model_"+model+".pkl"),num_epochs=nepochs,scale_factor=scale_factor_test)  
+    f = file(os.path.join(db,"models","loss_"+model+".data", 'wb'))
     cPickle.dump(train_errs,f,protocol=cPickle.HIGHEST_PROTOCOL)
     f.close()
 

@@ -35,8 +35,6 @@ if __name__ == "__main__":
     db=None
     if kwargs.__getattribute__('db'):
         db = kwargs.__getattribute__('db')
-    # else:
-    #     db='/home/marius/Documents/Database/iKala/'  
     if kwargs.__getattribute__('feature_path'):
         feature_path = kwargs.__getattribute__('feature_path')
     else:
@@ -62,7 +60,7 @@ if __name__ == "__main__":
             audioObj=None
 
             #read pitches so they can be written as separate features 
-            lines = np.loadtxt(db+"PitchLabel/"+f.replace('wav','pv'), comments="#", delimiter="\n", unpack=False)
+            lines = np.loadtxt(os.path.join(db,"PitchLabel",f.replace('wav','pv')), comments="#", delimiter="\n", unpack=False)
             
             if not os.path.exists(feature_path):
                 os.makedirs(feature_path)
