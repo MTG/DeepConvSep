@@ -386,21 +386,22 @@ if __name__ == "__main__":
         climate.add_arg('--scale_factor', help="scale factor for the data")
         climate.add_arg('--feature_path', help="the path where to load the features from")
         climate.add_arg('--scale_factor_test', help="scale factor for the test data")
+        climate.add_arg('--nsamples', help="max number of files to train on")
         db=None
         kwargs = climate.parse_args()
         if kwargs.__getattribute__('db'):
             db = kwargs.__getattribute__('db')
         else:
-            db='/home/user/Documents/Database/Bach10/'  
+            db='/home/marius/Documents/Database/Bach10/'  
         if kwargs.__getattribute__('feature_path'):
             feature_path = kwargs.__getattribute__('feature_path')
         else:
-            feature_path=os.path.join(db,'Source separation','transforms','t3_synth_aug_more') 
+            feature_path=os.path.join(db,'transforms','t3_rwc') 
         assert os.path.isdir(db), "Please input the directory for the Bach10 dataset with --db path_to_Bach10"  
         if kwargs.__getattribute__('model'):
             model = kwargs.__getattribute__('model')
         else:
-            model="fft_synth_one_aug_more_4096_blind_nomp_all_gt"    
+            model="fft_rwc_synth_one_aug_more_4096_blind_nomp_all"    
         if kwargs.__getattribute__('batch_size'):
             batch_size = int(kwargs.__getattribute__('batch_size')) 
         else:
@@ -424,7 +425,7 @@ if __name__ == "__main__":
         if kwargs.__getattribute__('nepochs'):
             nepochs = int(kwargs.__getattribute__('nepochs')) 
         else:
-            nepochs = 40
+            nepochs = 20
         if kwargs.__getattribute__('scale_factor'):
             scale_factor = int(kwargs.__getattribute__('scale_factor')) 
         else:
@@ -433,6 +434,10 @@ if __name__ == "__main__":
             scale_factor_test = int(kwargs.__getattribute__('scale_factor_test')) 
         else:
             scale_factor_test = 0.2
+        if kwargs.__getattribute__('nsamples'):
+            nsamples = int(kwargs.__getattribute__('nsamples')) 
+        else:
+            nsamples = 0
 
     style = ['original']
     path_in = []
@@ -441,15 +446,14 @@ if __name__ == "__main__":
     for f in sorted(os.listdir(os.path.join(db,'Sources'))):
         if os.path.isdir(os.path.join(db,'Sources',f)) and f[0].isdigit():
             testfile_list.append(f)  
-
-    for s in style:
-        if os.path.exists(os.path.join(feature_path,s)):
-            path_in.append(os.path.join(feature_path,s))
-
+            for s in style:
+                if os.path.exists(os.path.join(feature_path,f,s)):
+                    path_in.append(os.path.join(feature_path,f,s))
+    print path_in
     #tt object needs to be the same as the one in compute_features
     tt=transformFFT(frameSize=4096, hopSize=512, sampleRate=44100, window=blackmanharris)
 
-    ld1 = LargeDataset(path_transform_in=path_in, nsources=4, batch_size=batch_size, batch_memory=batch_memory, time_context=time_context, overlap=overlap, nprocs=nprocs,mult_factor_in=scale_factor,mult_factor_out=scale_factor)
+    ld1 = LargeDataset(path_transform_in=path_in, nsources=4, nsamples=nsamples, batch_size=batch_size, batch_memory=batch_memory, time_context=time_context, overlap=overlap, nprocs=nprocs,mult_factor_in=scale_factor,mult_factor_out=scale_factor)
     logging.info("  Maximum:\t\t{:.6f}".format(ld1.getMax()))
     logging.info("  Mean:\t\t{:.6f}".format(ld1.getMean()))
     logging.info("  Standard dev:\t\t{:.6f}".format(ld1.getStd()))
