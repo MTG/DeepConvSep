@@ -1,15 +1,13 @@
 # DeepConvSep
 Deep Convolutional Neural Networks for Musical Source Separation 
 
-This repository contains classes for data generation and preprocessing, useful in training neural networks with large datasets that do not fit into memory. 
+This repository contains classes for data generation and preprocessing, useful in training neural networks with large datasets that do not fit into memory. Additionally, you can find classes to query samples of instrument sounds from <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>.
 
-In the examples folder you can find use cases for the classes above for the case of music source separation. We provide code for feature computation (STFT) and for training convolutional neural networks for music source separation. 
+In the 'examples' folder you can find use cases for the classes above for the case of music source separation. We provide code for feature computation (STFT) and for training convolutional neural networks for music source separation: singing voice source separation with the dataset iKala dataset, for voice, bass, drums separation with DSD100 dataset, for bassoon, clarinet, saxophone, violin with <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>. The later is a good example for training a neural network with instrument samples from the RWC instrument sound database <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>, when the original score is available. 
 
 In the 'evaluation' folder you can find matlab code to evaluate the quality of separation, based on <a href="http://bass-db.gforge.inria.fr/bss_eval/">BSS eval</a>.
 
 For training neural networks we use <a href="http://lasagne.readthedocs.io/">Lasagne</a> and <a href="http://deeplearning.net/software/theano/">Theano</a>.
-
-In the "examples" directory we include examples for training neural networks for singing voice source separation with the dataset iKala dataset, for voice, bass, drums separation with DSD100 dataset, for bassoon, clarinet, saxophone, violin with <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>. The later is a good example for training a neural network with instrument samples from the RWC instrument sound database <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>, when the original score is available. 
 
 We provide code for separation using already trained models for different tasks.
 
