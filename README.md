@@ -1,13 +1,22 @@
 # DeepConvSep
 Deep Convolutional Neural Networks for Musical Source Separation 
 
-This repository contains routines for data generation and preprocessing, useful in training neural networks with large datasets that do not fit into memory. Additionally, it contains python code to train convolutional neural networks for music source separation and matlab code to evaluate the quality of separation. 
+This repository contains routines for data generation and preprocessing, useful in training neural networks with large datasets that do not fit into memory. Additionally, it contains python code to train convolutional neural networks for music source separation and matlab code to evaluate the quality of separation, based on BSS eval (http://bass-db.gforge.inria.fr/bss_eval/).
 
 For training neural networks we use <a href="http://lasagne.readthedocs.io/">Lasagne</a> and <a href="http://deeplearning.net/software/theano/">Theano</a>.
 
-In the "examples" directory we include examples for training neural networks for singing voice source separation with the dataset iKala dataset and for voice, bass, drums separation with DSD100 dataset.
+In the "examples" directory we include examples for training neural networks for singing voice source separation with the dataset iKala dataset, for voice, bass, drums separation with DSD100 dataset, for bassoon, clarinet, saxophone, violin with <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>. The later is a good example for training a neural network with instrument samples from the RWC instrument sound database <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>, when the original score is available. 
 
 We provide code for separation using already trained models for different tasks.
+
+Separate Bach0 chorales into bassoon,clarinet,saxophone,violin in examples/bach10/separate_bach10.py :
+
+    python separate_bach10.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
+
+where : 
+- \<inputfile\> is the wav file to separate
+- \<outputdir\> is the output directory where to write the separation
+- \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOb281azdKc2tWbFk">this address</a>
 
 Separate music into vocals,bass,drums,accompaniment in examples/dsd100/separate_dsd.py :
 
@@ -54,6 +63,28 @@ Example
     
     ### Load binary training data from the out_path folder
     train = LargeDataset(path_transform_in=out_path, batch_size=32, batch_memory=200, time_context=30, overlap=20, nprocs=7)
+
+# Audio sample querying for a given instrument and note using the RWC instrument sounds database
+The <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a> contains samples played by various musicians in various styles and dynamics, comprising different instruments.
+You can obtain a sample for a given midi note, instrument, style, dynamics and musician(1,2,3) by using the classes in 'rwc.py'. 
+
+Example   
+    
+    ### construct lists for the desired dynamics,styles,musician and instrument codes 
+    allowed_styles = ['NO']
+    allowed_dynamics = ['F','M','P']
+    allowed_case = [1,2,3]
+    instrument_nums=[30,31,27,15] #bassoon,clarinet,saxophone,violin       
+    instruments = []
+    for ins in range(len(instrument_nums)):
+        #for each instrument construct an Instrument object 
+        instruments.append(rwc.Instrument(rwc_path,instrument_nums[ins],allowed_styles,allowed_case,allowed_dynamics))
+    
+    #then, for a given instrument 'i' and midi note 'm', dynamics 'd', style 's', musician 'n' 
+    note = self.instruments[i].getNote(melNotes[m],d,s,n)
+    #get the audio vector for the note      
+    audio = note.getAudio()
+    
     
 
 # References
@@ -63,6 +94,11 @@ P. Chandna, M. Miron, J. Janer, and E. Gomez,
 “Monoaural audio source separation using deep convolutional neural networks” 
 International Conference on Latent Variable Analysis and Signal Separation, 2017.
 <a href="http://mtg.upf.edu/node/3680">PDF</a>
+
+M. Miron, J. Janer, and E. Gomez, 
+"Generating data to train convolutional neural networks for low latency classical music source separation"
+Sound and Music Computing Conference 2017 (submitted)
+
 
 #Dependencies for running separation
 python 2.7
@@ -79,6 +115,19 @@ The dependencies can be installed with pip:
     pip install numpy scipy pickle cPickle climate theano 
     pip install https://github.com/Lasagne/Lasagne/archive/master.zip
 
+#Separating classical music mixtures with Bach10 dataset
+We separate bassoon,clarinet,saxophone,violing using <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>, which comprises 10 Bach chorales. Our approach consists in synthesing the original scores considering different timbres, dynamics, playing styles, and local timing deviations to train a more robust model for classical music separation. 
+
+We have three experiments:
+-Oracle: train with the original pieces (obviously overfitting, hence this is the "Oracle")
+-Sibelius: train with the pieces sythesized with Sibelius software
+-RWC: train with the pieces synthesized using the samples in <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>.  
+
+The score is given in .txt files containing the name of the of the instrument and an additional suffix, e.g. 'bassoon_g.txt'. The format for a note in the text file is: onset, offset, midinotename , as the following example: 6.1600,6.7000,F4# .
+
+The code to for feature computation and training the network can be found in "examples/bach10" folder.
+
+
 #Separating Professionally Produced Music
 We separate voice, bass, drums and accompaniment using DSD100 dataset comprising professionally produced music. For more details about the challenge, please refer to <a href="http://www.sisec17.audiolabs-erlangen.de">SiSEC MUS</a> challenge and <a href="https://sisec.inria.fr/home/2016-professionally-produced-music-recordings/">DSD100</a> dataset.
 
@@ -90,6 +139,18 @@ We separate voice and accompaniment using the iKala dataset. For more details ab
 The code to for feature computation and training the network can be found in "examples/ikala" folder.
 
 #Training models
+
+For Bach10 dataset :
+    
+    #train with the original dataset
+    python -m examples.bach10.compute_features_bach10 --db '/path/to/Bach10/'
+    #train with the the synthetic dataset generated with Sibelius 
+    python -m examples.bach10.compute_features_bach10sibelius --db '/path/to/synthetic/Bach10/'
+    #train with the rwc dataset 
+    python -m examples.bach10.compute_features_bach10rwc --db '/path/to/Bach10/' --rwc '/path/to/rwc/'
+    ### Replace gpu0 with cpu,gpu,cuda,gpu0 etc. depending on your system configuration
+    THEANO_FLAGS=mode=FAST_RUN,device=gpu0,floatX=float32,lib.cnmem=0.95 python -m examples.bach10.trainCNNrwc --db '/path/to/Bach10/'
+    THEANO_FLAGS=mode=FAST_RUN,device=gpu0,floatX=float32,lib.cnmem=0.95 python -m examples.bach10.trainCNNSibelius --db '/path/to/Bach10/'
 
 For iKala :
 
