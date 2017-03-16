@@ -121,8 +121,11 @@ The dependencies can be installed with pip:
 We separate bassoon,clarinet,saxophone,violing using <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>, which comprises 10 Bach chorales. Our approach consists in synthesing the original scores considering different timbres, dynamics, playing styles, and local timing deviations to train a more robust model for classical music separation. 
 
 We have three experiments:
--Oracle: train with the original pieces (obviously overfitting, hence this is the "Oracle")
--Sibelius: train with the pieces sythesized with Sibelius software
+
+-Oracle: train with the original pieces (obviously overfitting, hence this is the "Oracle");
+
+-Sibelius: train with the pieces sythesized with Sibelius software;
+
 -RWC: train with the pieces synthesized using the samples in <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>.  
 
 The score is given in .txt files containing the name of the of the instrument and an additional suffix, e.g. 'bassoon_g.txt'. The format for a note in the text file is: onset, offset, midinotename , as the following example: 6.1600,6.7000,F4# .
