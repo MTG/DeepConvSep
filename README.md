@@ -11,15 +11,6 @@ For training neural networks we use <a href="http://lasagne.readthedocs.io/">Las
 
 We provide code for separation using already trained models for different tasks.
 
-Separate Bach0 chorales into bassoon, clarinet, saxophone, violin in examples/bach10/separate_bach10.py :
-
-    python separate_bach10.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
-
-where : 
-- \<inputfile\> is the wav file to separate
-- \<outputdir\> is the output directory where to write the separation
-- \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOb281azdKc2tWbFk">this address</a>
-
 Separate music into vocals, bass, drums, accompaniment in examples/dsd100/separate_dsd.py :
 
     python separate_dsd.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
@@ -37,6 +28,16 @@ where :
 - \<inputfile\> is the wav file to separate
 - \<outputdir\> is the output directory where to write the separation
 - \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOYlRxQTl3eDBxQTg">this address</a>
+
+Separate Bach0 chorales into bassoon, clarinet, saxophone, violin in examples/bach10/separate_bach10.py :
+
+    python separate_bach10.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
+
+where : 
+- \<inputfile\> is the wav file to separate
+- \<outputdir\> is the output directory where to write the separation
+- \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOb281azdKc2tWbFk">this address</a>
+
 
 # Data generation
 Compute the features for a given set of audio signals extending the "Transform" class in transform.py
@@ -102,12 +103,7 @@ M. Miron, J. Janer, and E. Gomez,
 Sound and Music Computing Conference 2017 (submitted)
 
 
-# Dependencies for running separation
-python 2.7
-
-numpy, scipy, cPickle, theano, lasagne
-
-# Dependencies for training
+# Dependencies 
 python 2.7
 
 climate, numpy, scipy, cPickle, theano, lasagne
