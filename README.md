@@ -102,12 +102,12 @@ M. Miron, J. Janer, and E. Gomez,
 Sound and Music Computing Conference 2017 (submitted)
 
 
-#Dependencies for running separation
+# Dependencies for running separation
 python 2.7
 
 numpy, scipy, cPickle, theano, lasagne
 
-#Dependencies for training
+# Dependencies for training
 python 2.7
 
 climate, numpy, scipy, cPickle, theano, lasagne
@@ -117,7 +117,7 @@ The dependencies can be installed with pip:
     pip install numpy scipy pickle cPickle climate theano 
     pip install https://github.com/Lasagne/Lasagne/archive/master.zip
 
-#Separating classical music mixtures with Bach10 dataset
+# Separating classical music mixtures with Bach10 dataset
 We separate bassoon,clarinet,saxophone,violing using <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>, which comprises 10 Bach chorales. Our approach consists in synthesing the original scores considering different timbres, dynamics, playing styles, and local timing deviations to train a more robust model for classical music separation. 
 
 We have three experiments:
@@ -133,17 +133,17 @@ The score is given in .txt files containing the name of the of the instrument an
 The code to for feature computation and training the network can be found in "examples/bach10" folder.
 
 
-#Separating Professionally Produced Music
+# Separating Professionally Produced Music
 We separate voice, bass, drums and accompaniment using DSD100 dataset comprising professionally produced music. For more details about the challenge, please refer to <a href="http://www.sisec17.audiolabs-erlangen.de">SiSEC MUS</a> challenge and <a href="https://sisec.inria.fr/home/2016-professionally-produced-music-recordings/">DSD100</a> dataset.
 
 The code to for feature computation and training the network can be found in "examples/dsd100" folder.
 
-#iKala - Singing voice separation
+# iKala - Singing voice separation
 We separate voice and accompaniment using the iKala dataset. For more details about the challenge, please refer to <a href="http://www.music-ir.org/mirex/wiki/2016:Singing_Voice_Separation_Results">MIREX Singing voice separation 2016</a> and <a href="http://mac.citi.sinica.edu.tw/ikala/">iKala</a> dataset. 
 
 The code to for feature computation and training the network can be found in "examples/ikala" folder.
 
-#Training models
+# Training models
 
 For Bach10 dataset :
     
@@ -170,7 +170,7 @@ For SiSEC MUS using DSD100 dataset :
     THEANO_FLAGS=mode=FAST_RUN,device=gpu0,floatX=float32,lib.cnmem=0.95 python -m examples.dsd100.trainCNN --db '/path/to/DSD100/'
 
 
-#Evaluation 
+# Evaluation 
 
 The metrics are computed with bsseval images v3.0, as described <a href="http://bass-db.gforge.inria.fr/bss_eval/">here</a>. 
 
@@ -186,10 +186,10 @@ The script takes as parameters the id of the file, the path to the dataset, and 
 
 For SiSEC-MUS/DSD100, use the scripts at the <a href="https://github.com/faroit/dsd100mat">web-page</a>.
 
-#Acknowledgments
+# Acknowledgments
 The TITANX used for this research was donated by the NVIDIA Corporation.
 
-#License
+# License
 
     Copyright (c) 2014-2017 
     Marius Miron <miron.marius at gmail dot com>, 
