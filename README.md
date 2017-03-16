@@ -1,7 +1,11 @@
 # DeepConvSep
 Deep Convolutional Neural Networks for Musical Source Separation 
 
-This repository contains routines for data generation and preprocessing, useful in training neural networks with large datasets that do not fit into memory. Additionally, it contains python code to train convolutional neural networks for music source separation and matlab code to evaluate the quality of separation, based on BSS eval (http://bass-db.gforge.inria.fr/bss_eval/).
+This repository contains classes for data generation and preprocessing, useful in training neural networks with large datasets that do not fit into memory. 
+
+In the examples folder you can find use cases for the classes above for the case of music source separation. We provide code for feature computation (STFT) and for training convolutional neural networks for music source separation. 
+
+In the 'evaluation' folder you can find matlab code to evaluate the quality of separation, based on <a href="http://bass-db.gforge.inria.fr/bss_eval/">BSS eval</a>.
 
 For training neural networks we use <a href="http://lasagne.readthedocs.io/">Lasagne</a> and <a href="http://deeplearning.net/software/theano/">Theano</a>.
 
@@ -9,7 +13,7 @@ In the "examples" directory we include examples for training neural networks for
 
 We provide code for separation using already trained models for different tasks.
 
-Separate Bach0 chorales into bassoon,clarinet,saxophone,violin in examples/bach10/separate_bach10.py :
+Separate Bach0 chorales into bassoon, clarinet, saxophone, violin in examples/bach10/separate_bach10.py :
 
     python separate_bach10.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
 
@@ -18,7 +22,7 @@ where :
 - \<outputdir\> is the output directory where to write the separation
 - \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOb281azdKc2tWbFk">this address</a>
 
-Separate music into vocals,bass,drums,accompaniment in examples/dsd100/separate_dsd.py :
+Separate music into vocals, bass, drums, accompaniment in examples/dsd100/separate_dsd.py :
 
     python separate_dsd.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
 
@@ -64,7 +68,7 @@ Example
     ### Load binary training data from the out_path folder
     train = LargeDataset(path_transform_in=out_path, batch_size=32, batch_memory=200, time_context=30, overlap=20, nprocs=7)
 
-# Audio sample querying for a given instrument and note using the RWC instrument sounds database
+# Audio sample querying using RWC database
 The <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a> contains samples played by various musicians in various styles and dynamics, comprising different instruments.
 You can obtain a sample for a given midi note, instrument, style, dynamics and musician(1,2,3) by using the classes in 'rwc.py'. 
 
