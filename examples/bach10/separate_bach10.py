@@ -190,49 +190,42 @@ def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=513):
     """
 
     input_shape=(batch_size,1,time_context,feat_size)
+    #scaled_tanh = lasagne.nonlinearities.ScaledTanH(scale_in=1, scale_out=0.5)
 
-    #input layer
     l_in_1 = lasagne.layers.InputLayer(shape=input_shape, input_var=input_var)
 
-    #vertical convolution layer
-    l_conv1 = lasagne.layers.Conv2DLayer(l_in_1, num_filters=50, filter_size=(1,feat_size),stride=(1,1), pad='valid', nonlinearity=None)
+    l_conv1 = lasagne.layers.Conv2DLayer(l_in_1, num_filters=30, filter_size=(1,30),stride=(1,4), pad='valid', nonlinearity=None)
     l_conv1b= lasagne.layers.BiasLayer(l_conv1)
 
-    #horizontal convolution layer
-    l_conv2 = lasagne.layers.Conv2DLayer(l_conv1b, num_filters=50, filter_size=(int(time_context/2),1),stride=(1,1), pad='valid', nonlinearity=None)
+    l_conv2 = lasagne.layers.Conv2DLayer(l_conv1b, num_filters=30, filter_size=(int(2*time_context/3),1),stride=(1,1), pad='valid', nonlinearity=None)
     l_conv2b= lasagne.layers.BiasLayer(l_conv2)
 
-    #bottlneck layer
-    l_fc=lasagne.layers.DenseLayer(l_conv2b,128)
-
-    #build output for source1
+    l_fc=lasagne.layers.DenseLayer(l_conv2b,256)
+   
     l_fc11=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
     l_reshape1 = lasagne.layers.ReshapeLayer(l_fc11,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse11=lasagne.layers.InverseLayer(l_reshape1, l_conv2)
     l_inverse41=lasagne.layers.InverseLayer(l_inverse11, l_conv1)
-
-    #build output for source2
+  
     l_fc12=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
     l_reshape2 = lasagne.layers.ReshapeLayer(l_fc12,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse12=lasagne.layers.InverseLayer(l_reshape2, l_conv2)
     l_inverse42=lasagne.layers.InverseLayer(l_inverse12, l_conv1)
 
-    #build output for source3
     l_fc13=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
     l_reshape3 = lasagne.layers.ReshapeLayer(l_fc13,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse13=lasagne.layers.InverseLayer(l_reshape3, l_conv2)
     l_inverse43=lasagne.layers.InverseLayer(l_inverse13, l_conv1)
 
-    #build output for source4
     l_fc14=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
-    l_reshape4 = lasagne.layers.ReshapeLayer(l_fc12,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
+    l_reshape4 = lasagne.layers.ReshapeLayer(l_fc14,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse14=lasagne.layers.InverseLayer(l_reshape4, l_conv2)
     l_inverse44=lasagne.layers.InverseLayer(l_inverse14, l_conv1)
 
-    #build final output 
     l_merge=lasagne.layers.ConcatLayer([l_inverse41,l_inverse42,l_inverse43,l_inverse44],axis=1)
+
     l_out = lasagne.layers.NonlinearityLayer(lasagne.layers.BiasLayer(l_merge), nonlinearity=lasagne.nonlinearities.rectify)
-   
+  
     return l_out
 
 
@@ -240,9 +233,9 @@ def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 
     input_var2 = T.tensor4('inputs')
     target_var2 = T.tensor4('targets')
     rand_num = T.tensor4('rand_num')
-    source = ['vocals','bass','drums','other']
+    source = ['bassoon','clarinet','saxphone','violin']
 
-    eps=1e-8
+    eps=1e-18
     network2 = build_ca(input_var2,batch_size,time_context,input_size)    
   
     #print("Loading model...")
@@ -255,22 +248,22 @@ def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 
     params=None
     rand_num = np.random.uniform(size=(batch_size,1,time_context,input_size))
 
-    voc=prediction2[:,0:1,:,:]+eps*rand_num
-    bas=prediction2[:,1:2,:,:]+eps*rand_num
-    dru=prediction2[:,2:3,:,:]+eps*rand_num
-    oth=prediction2[:,3:4,:,:]+eps*rand_num
+    s1=prediction2[:,0:1,:,:]
+    s2=prediction2[:,1:2,:,:]
+    s3=prediction2[:,2:3,:,:]
+    s4=prediction2[:,3:4,:,:]
 
-    mask1=voc/(voc+bas+dru+oth)
-    mask2=bas/(voc+bas+dru+oth)
-    mask3=dru/(voc+bas+dru+oth)
-    mask4=oth/(voc+bas+dru+oth)
+    mask1=s1/(s1+s2+s3+s4+eps*rand_num)
+    mask2=s2/(s1+s2+s3+s4+eps*rand_num)
+    mask3=s3/(s1+s2+s3+s4+eps*rand_num)
+    mask4=s4/(s1+s2+s3+s4+eps*rand_num)
 
-    vocals=mask1*input_var2
-    bass=mask2*input_var2
-    drums=mask3*input_var2
-    others=mask4*input_var2  
+    source1=mask1*input_var2[:,0:1,:,:]
+    source2=mask2*input_var2[:,0:1,:,:]
+    source3=mask3*input_var2[:,0:1,:,:]
+    source4=mask4*input_var2[:,0:1,:,:]
 
-    predict_function2=theano.function([input_var2],[vocals,bass,drums,others],allow_input_downcast=True) 
+    predict_function2=theano.function([input_var2],[source1,source2,source3,source4],allow_input_downcast=True) 
  
     sampleRate, audioObj = scipy.io.wavfile.read(filein)  
     
@@ -317,11 +310,11 @@ def main(argv):
     try:
        opts, args = getopt.getopt(argv,"hi:o:m:",["ifile=","odir=","--mfile"])
     except getopt.GetoptError:
-       print 'python separate_dsd.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>'
+       print 'python separate_bach10.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>'
        sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-          print 'python separate_dsd.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>'
+          print 'python separate_bach10.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>'
           sys.exit()
         elif opt in ("-i", "--ifile"):
           inputfile = arg
@@ -329,7 +322,7 @@ def main(argv):
           outdir = arg
         elif opt in ("-m", "--mfile"):
           model = arg
-    train_auto(inputfile,outdir,model,0.3,30,25,32,513)   
+    train_auto(inputfile,outdir,model,0.3,30,25,32,2049)   
 
 if __name__ == "__main__":
     main(sys.argv[1:])

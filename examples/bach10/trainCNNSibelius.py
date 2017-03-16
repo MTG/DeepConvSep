@@ -349,8 +349,9 @@ if __name__ == "__main__":
     http://music.cs.northwestern.edu/data/Bach10.html
 
     More details in the following article:
+        More details in the following article:
+    Marius Miron, Jordi Janer, Emilia Gomez, "Generating data to train convolutional neural networks for low latency classical music source separation", Sound and Music Computing Conference 2017 (submitted)
     
-    Given the features computed previusly with compute_features_bach10rwc with --original 0, train a network and perform the separation.
     Given the features computed previusly with compute_features_bach10sibelius, train a network and perform the separation.
     
     Parameters

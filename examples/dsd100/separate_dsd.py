@@ -242,7 +242,7 @@ def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 
     rand_num = T.tensor4('rand_num')
     source = ['vocals','bass','drums','other']
 
-    eps=1e-8
+    eps=1e-18
     network2 = build_ca(input_var2,batch_size,time_context,input_size)    
   
     #print("Loading model...")

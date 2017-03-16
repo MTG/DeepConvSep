@@ -349,10 +349,10 @@ if __name__ == "__main__":
     http://music.cs.northwestern.edu/data/Bach10.html
 
     More details in the following article:
+    Marius Miron, Jordi Janer, Emilia Gomez, "Generating data to train convolutional neural networks for low latency classical music source separation", Sound and Music Computing Conference 2017 (submitted)
     
     Given the features computed previusly with compute_features_bach10rwc with --original 0, train a network and perform the separation.
-    Given the features computed previusly with compute_features_bach10sibelius, train a network and perform the separation.
-    
+   
     Parameters
     ----------
     db : string
@@ -387,12 +387,13 @@ if __name__ == "__main__":
         climate.add_arg('--feature_path', help="the path where to load the features from")
         climate.add_arg('--scale_factor_test', help="scale factor for the test data")
         climate.add_arg('--nsamples', help="max number of files to train on")
+        climate.add_arg('--original', help="compute features for the original score or ground truth aligned score")
         db=None
         kwargs = climate.parse_args()
         if kwargs.__getattribute__('db'):
             db = kwargs.__getattribute__('db')
         else:
-            db='/home/marius/Documents/Database/Bach10/'  
+            db='/home/user/Documents/Database/Bach10/'    
         if kwargs.__getattribute__('feature_path'):
             feature_path = kwargs.__getattribute__('feature_path')
         else:
@@ -438,8 +439,15 @@ if __name__ == "__main__":
             nsamples = int(kwargs.__getattribute__('nsamples')) 
         else:
             nsamples = 0
+        if kwargs.__getattribute__('original'):
+            original = int(kwargs.__getattribute__('original')) 
+        else:
+            original = True
 
-    style = ['original']
+    if original:
+        style = ['original']
+    else:
+        style = ['gt']
     path_in = []
     testfile_list = []
 
@@ -449,7 +457,7 @@ if __name__ == "__main__":
             for s in style:
                 if os.path.exists(os.path.join(feature_path,f,s)):
                     path_in.append(os.path.join(feature_path,f,s))
-    print path_in
+    
     #tt object needs to be the same as the one in compute_features
     tt=transformFFT(frameSize=4096, hopSize=512, sampleRate=44100, window=blackmanharris)
 
