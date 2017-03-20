@@ -163,12 +163,12 @@ if __name__ == "__main__":
     if kwargs.__getattribute__('db'):
       db = kwargs.__getattribute__('db')
     else:
-      db='/home/user/Documents/Database/Bach10 Sibelius/' 
+      db='/home/marius/Documents/Database/Bach10/' 
       
     if kwargs.__getattribute__('rwc'):
       rwc_path = kwargs.__getattribute__('rwc')
     else:
-      rwc_path='/home/user/Documents/Database/RWC/'  
+      rwc_path='/home/marius/Documents/Database/RWC/'  
      
     if kwargs.__getattribute__('chunk_size'):
         chunk_size = float(kwargs.__getattribute__('chunk_size'))
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     else:
         original = True
 
-    assert os.path.isdir(db), "Please input the directory for the Bach10 Sibelius dataset with --db path_to_Bach10"
+    assert os.path.isdir(db), "Please input the directory for the Bach10 dataset with --db path_to_Bach10"
     assert os.path.isdir(rwc_path), "Please input the directory for the RWC instrument sound with --db path_to_RWC"
    
     if original:
@@ -206,7 +206,7 @@ if __name__ == "__main__":
       style = ['gt']
       style_midi = ['']
       time_shifts=[0.]
-      sample_size = np.minimum(100,sample_size)
+      sample_size = np.minimum(50,sample_size)
 
     allowed_styles = ['NO']
     allowed_dynamics = ['F','M','P']
@@ -218,15 +218,15 @@ if __name__ == "__main__":
         instruments.append(rwc.Instrument(rwc_path,instrument_nums[ins],allowed_styles,allowed_case,allowed_dynamics))
     
     #compute transform
-    for f in sorted(os.listdir(os.path.join(db))):
-        if os.path.isdir(os.path.join(db,f)) and f[0].isdigit() :
+    for f in sorted(os.listdir(os.path.join(db,'Sources'))):
+        if os.path.isdir(os.path.join(db,'Sources',f)) and f[0].isdigit() :
 
           for s in range(len(style)):
 
               if not os.path.exists(os.path.join(feature_path,f,style[s])):
                   os.makedirs(os.path.join(feature_path,f,style[s])) 
         
-              engine = Engine(db,feature_path,instruments,allowed_styles,allowed_dynamics,allowed_case,time_shifts,rwc_path,chunk_size,sample_size,style,style_midi)
+              engine = Engine(os.path.join(db,'Sources'),feature_path,instruments,allowed_styles,allowed_dynamics,allowed_case,time_shifts,rwc_path,chunk_size,sample_size,style,style_midi)
               combos = engine.getCombos() 
               print len(combos)
               try:

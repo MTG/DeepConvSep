@@ -32,28 +32,36 @@ if __name__ == "__main__":
     if len(sys.argv)>-1:
         climate.add_arg('--db', help="the Bach10 Sibelius dataset path")
         climate.add_arg('--feature_path', help="the path where to save the features")
+        climate.add_arg('--gt', help="compute features for the ground truth aligned rendition or the others")
     db=None
     kwargs = climate.parse_args()
     if kwargs.__getattribute__('db'):
         db = kwargs.__getattribute__('db')
     else:
-        db='/home/user/Documents/Database/Bach10/Source separation/' 
+        db='/home/marius/Documents/Database/Bach10/Source separation/' 
     if kwargs.__getattribute__('feature_path'):
         feature_path = kwargs.__getattribute__('feature_path')
     else:
         feature_path=os.path.join(db,'transforms','t3_synth_aug_more') 
+    if kwargs.__getattribute__('gt'):
+        gt = int(kwargs.__getattribute__('gt')) 
+    else:
+        gt = True
     assert os.path.isdir(db), "Please input the directory for the Bach10 Sibelius dataset with --db path_to_Bach10"
     
-    sources = ['Bassoon','Clarinet','Saxophone','Violin']
+    sources = ['bassoon','clarinet','saxophone','violin']
     sources_midi = ['bassoon','clarinet','saxophone','violin']
-    style = ['fast','slow','original']
-    style_midi = ['fast20','slow20','original']
 
-    step=0.1
-    max_step=2
-    delays = [j*step for j in range(-max_step,max_step+1)]
-    time_shifts=[0.,0.1,0.2]
-    intensity_shifts=[1.]
+    if gt:
+        style = ['gt']
+        style_midi = ['']    
+        time_shifts=[0.]
+        intensity_shifts=[1.]
+    else:
+        style = ['fast','slow','original']
+        style_midi = ['_fast20','_slow20','_original']    
+        time_shifts=[0.,0.1,0.2]
+        intensity_shifts=[1.]
 
     cc=[(time_shifts[i], intensity_shifts[j]) for i in xrange(len(time_shifts)) for j in xrange(len(intensity_shifts))]
     if len(cc)<len(sources):
@@ -114,7 +122,7 @@ if __name__ == "__main__":
                             audio[:,0] = audio[:,0] + c[i,1] * segment[:size]
                             audio[:,i+1] = c[i,1] * segment[:size]
 
-                            melody[i,0:1,:],melodyBegin,melodyEnd,melNotes = util.getMidi(sources_midi[i]+'_g_'+style_midi[s],os.path.join(db,f),0,40.0,sampleRate,tt.hopSize,tt.frameSize,c[i,0],c[i,0],nframes)
+                            melody[i,0:1,:],melodyBegin,melodyEnd,melNotes = util.getMidi(sources_midi[i]+'_g'+style_midi[s],os.path.join(db,f),0,40.0,sampleRate,tt.hopSize,tt.frameSize,c[i,0],c[i,0],nframes)
 
                             segment = None
                             sounds = None

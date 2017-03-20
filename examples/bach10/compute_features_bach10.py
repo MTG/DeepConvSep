@@ -36,23 +36,23 @@ if __name__ == "__main__":
     if kwargs.__getattribute__('db'):
         db = kwargs.__getattribute__('db')
     else:
-        db='/home/user/Documents/Database/Bach10/Sources/'  
+        db='/home/marius/Documents/Database/Bach10/'  
     if kwargs.__getattribute__('feature_path'):
         feature_path = kwargs.__getattribute__('feature_path')
     else:
-        feature_path=os.path.join(db,'transforms','t3_synth_aug_more') 
+        feature_path=os.path.join(db,'transforms','t3') 
     assert os.path.isdir(db), "Please input the directory for the Bach10 dataset with --db path_to_Bach10"
     
     sources = ['bassoon','clarinet','saxphone','violin']
     sources_midi = ['bassoon','clarinet','saxophone','violin']
 
     #compute transform
-    for f in os.listdir(db):
-        if os.path.isdir(os.path.join(db,f)) and f[0].isdigit() :
+    for f in os.listdir(os.path.join(db,'Sources')):
+        if os.path.isdir(os.path.join(db,'Sources',f)) and f[0].isdigit() :
             if not f.startswith('.'):
                 for i in range(len(sources)):
                     #read the audio file
-                    audioObj, sampleRate, bitrate = util.readAudioScipy(os.path.join(db,f,f+'-'+sources[i]+'.wav'))
+                    audioObj, sampleRate, bitrate = util.readAudioScipy(os.path.join(db,'Sources',f,f+'-'+sources[i]+'.wav'))
                  
                     if i==0:
                         tt=transformFFT(frameSize=4096, hopSize=512, sampleRate=44100, window=blackmanharris)
@@ -62,7 +62,7 @@ if __name__ == "__main__":
                     audio[:,0] = audio[:,0] + audioObj
                     audio[:,i+1] = audioObj
                     audioObj=None 
-                    melody[i,0:1,:],melodyBegin,melodyEnd,melNotes = util.getMidi(sources_midi[i]+'_g',os.path.join(db,f),0,40.0,sampleRate,tt.hopSize,tt.frameSize,0,0,nframes)
+                    melody[i,0:1,:],melodyBegin,melodyEnd,melNotes = util.getMidi(sources_midi[i]+'_g',os.path.join(db,'Sources',f),0,40.0,sampleRate,tt.hopSize,tt.frameSize,0,0,nframes)
                 
                 if not os.path.exists(feature_path):
                     os.makedirs(feature_path)

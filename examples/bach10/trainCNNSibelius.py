@@ -157,7 +157,7 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
     target_var2 = T.tensor4('targets')
     rand_num = T.tensor4('rand_num')
     
-    eps=1e-8
+    eps=1e-18
     alpha=0.001
 
     network2 = fun(input_var=input_var2,batch_size=train.batch_size,time_context=train.time_context,feat_size=train.input_size)
@@ -268,9 +268,9 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
 
                 nframes = int(np.ceil(len(audioObj) / np.double(tt.hopSize))) + 2
                 if i==0:
-                    audio = np.zeros(audioObj[0].shape[0])
+                    audio = np.zeros(audioObj.shape[0])
                     #melody = np.zeros((len(sources),1,nframes))
-                audio = audio + audioObj[0][:,0]
+                audio = audio + audioObj
                 audioObj=None 
                 
             mag,ph=transform.compute_file(audio,phase=True)
@@ -302,8 +302,7 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
             for f in testfile_list1:
                 for i in range(len(sources)):
                     filename=os.path.join(testdir1,f,f+'_'+s+'_'+sources_midi[i]+'.wav')
-                    audioObj = loader()
-                    sampleRate=audioObj[1]
+                    
                     audioObj, sampleRate, bitrate = util.readAudioScipy(filename)
                     
                     assert sampleRate == 44100,"Sample rate needs to be 44100"
@@ -311,9 +310,9 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
                     nframes = int(np.ceil(len(audioObj) / np.double(tt.hopSize))) + 2
                    
                     if i==0:
-                        audio = np.zeros(audioObj[0].shape[0])
+                        audio = np.zeros(audioObj.shape[0])
                         #melody = np.zeros((len(sources),1,nframes))
-                    audio = audio + audioObj[0][:,0]
+                    audio = audio + audioObj
                     audioObj=None 
                     
                 mag,ph=transform.compute_file(audio,phase=True)
@@ -349,7 +348,6 @@ if __name__ == "__main__":
     http://music.cs.northwestern.edu/data/Bach10.html
 
     More details in the following article:
-        More details in the following article:
     Marius Miron, Jordi Janer, Emilia Gomez, "Generating data to train convolutional neural networks for low latency classical music source separation", Sound and Music Computing Conference 2017 (submitted)
     
     Given the features computed previusly with compute_features_bach10sibelius, train a network and perform the separation.
@@ -387,12 +385,15 @@ if __name__ == "__main__":
         climate.add_arg('--scale_factor', help="scale factor for the data")
         climate.add_arg('--feature_path', help="the path where to load the features from")
         climate.add_arg('--scale_factor_test', help="scale factor for the test data")
+        climate.add_arg('--gt', help="compute features for the ground truth aligned rendition or the others")
+        climate.add_arg('--load', help="load external model")
+        climate.add_arg('--skip', help="skip training")
         db=None
         kwargs = climate.parse_args()
         if kwargs.__getattribute__('db'):
             db = kwargs.__getattribute__('db')
         else:
-            db='/home/user/Documents/Database/Bach10/'  
+            db='/home/marius/Documents/Database/Bach10/'  
         if kwargs.__getattribute__('feature_path'):
             feature_path = kwargs.__getattribute__('feature_path')
         else:
@@ -434,8 +435,23 @@ if __name__ == "__main__":
             scale_factor_test = int(kwargs.__getattribute__('scale_factor_test')) 
         else:
             scale_factor_test = 0.2
+        if kwargs.__getattribute__('gt'):
+            gt = int(kwargs.__getattribute__('gt')) 
+        else:
+            gt = True
+        if kwargs.__getattribute__('load'):
+            load = int(kwargs.__getattribute__('load')) 
+        else:
+            load = False
+        if kwargs.__getattribute__('skip'):
+            skip = int(kwargs.__getattribute__('skip')) 
+        else:
+            skip = False
 
-    style = ['original']
+    if gt:
+        style = ['gt']
+    else:
+        style = ['original']
     path_in = []
     testfile_list = []
 
@@ -465,8 +481,8 @@ if __name__ == "__main__":
 
     train_errs=train_auto(train=ld1,fun=build_ca,transform=tt,outdir=os.path.join(db,'output',model),testdir=os.path.join(db,'Sources'),testfile_list=testfile_list,\
         outdir1=os.path.join(db,'output',model+"_original"),testdir1=os.path.join(db,'Source separation'),testfile_list1=testfile_list,
-        model=os.path.join(db,"models","model_"+model+".pkl"),num_epochs=nepochs,scale_factor=scale_factor_test)  
-    f = file(os.path.join(db,"models","loss_"+model+".data", 'wb'))
+        model=os.path.join(db,"models","model_"+model+".pkl"),num_epochs=nepochs,scale_factor=scale_factor_test,load=load,skip_train=skip)  
+    f = file(os.path.join(db,"models","loss_"+model+".data"), 'wb')
     cPickle.dump(train_errs,f,protocol=cPickle.HIGHEST_PROTOCOL)
     f.close()
 
