@@ -36,7 +36,7 @@ Separate Bach0 chorales into bassoon, clarinet, saxophone, violin in examples/ba
 where : 
 - \<inputfile\> is the wav file to separate
 - \<outputdir\> is the output directory where to write the separation
-- \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOb281azdKc2tWbFk">this address</a>
+- \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOa3ZMSmhwRkwzaGM">this address</a>
 
 
 # Data generation
