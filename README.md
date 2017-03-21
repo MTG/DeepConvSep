@@ -173,6 +173,8 @@ The metrics are computed with bsseval images v3.0, as described <a href="http://
 The evaluation scripts can be found in the subfolder "evaluation".
 The subfolder "script_cluster" contains scripts to run the evaluation script in parallel on a HPC cluster system.
 
+For Bach10, you need to run the script Bach10_eval_only.m for each method in the 'base_estimates_directory' folder and for the 10 pieces. To evaluate the separation of the <a href="https://zenodo.org/record/321361#.WNFhKt-i7J8">Bach10 Sibeliust dataset</a>, use the 'Bach10_eval_only_original.m' script. Be careful not to mix the estimation directories for the two datasets.
+
 For iKala, you need to run the script evaluate_SS_iKala.m for each of the 252 files in the dataset.
 The script takes as parameters the id of the file, the path to the dataset, and the method of separation, which needs to be a directory containing the separation results, stored in 'output' folder.
 
@@ -181,6 +183,23 @@ The script takes as parameters the id of the file, the path to the dataset, and 
     end
 
 For SiSEC-MUS/DSD100, use the scripts at the <a href="https://github.com/faroit/dsd100mat">web-page</a>.
+
+If you have access to a HPC cluster, you can use the .sh scripts in the script_cluster folder which call the corresponding .m files.
+
+# Research reproducibility
+For DSD100 and iKAla, the framework was tested as a part of a public evaluation campaign and the results were published online (see the sections above). 
+
+For Bach10, we provide the synthetic <a href="https://zenodo.org/record/321361#.WNFhKt-i7J8">Bach10 Sibeliust dataset</a> and the <a href="https://zenodo.org/record/344499#.WNFjMN-i7J8">Bach10 Separation SMC2017 dataset</a> containing the separation for each method as .wav files and the evaluation results as .mat files. 
+
+If you want to compute the features and re-train the models, check the 'examples/bach10' folder and the instructions above. Alternatively, you can <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOa3ZMSmhwRkwzaGM">download</a> an already trained model and perform separation with 'separate_bach10.py'.
+
+If you want to evaluate the methods in <a href="https://zenodo.org/record/344499#.WNFjMN-i7J8">Bach10 Separation SMC2017 dataset</a>, then you can use the scripts in evaluation directory, which we explained above in the 'Evaluation' section.
+
+If you want to replicate the plots in the SMC2017 paper, you can run the script in the plots subfolder: 
+
+    bach10_smc_stats.py --db 'path-to-results-dir'
+
+Where 'path-to-results-dir' is the path to the folder where you have stored the results for each method (e.g. if you downloaded the Bach10 Separation SMC2017, it would be the 'results' subfolder).
 
 # Acknowledgments
 The TITANX used for this research was donated by the NVIDIA Corporation.
