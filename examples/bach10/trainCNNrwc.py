@@ -302,8 +302,6 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
             for f in testfile_list1:
                 for i in range(len(sources)):
                     filename=os.path.join(testdir1,f,f+'_'+s+'_'+sources_midi[i]+'.wav')
-                    audioObj = loader()
-                    sampleRate=audioObj[1]
                     audioObj, sampleRate, bitrate = util.readAudioScipy(filename)
                     
                     assert sampleRate == 44100,"Sample rate needs to be 44100"
