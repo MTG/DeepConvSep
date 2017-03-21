@@ -1,7 +1,7 @@
 # DeepConvSep
 Deep Convolutional Neural Networks for Musical Source Separation 
 
-This repository contains classes for data generation and preprocessing, useful in training neural networks with large datasets that do not fit into memory. Additionally, you can find classes to query samples of instrument sounds from <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>.
+This repository contains classes for data generation and preprocessing and feature computation, useful in training neural networks with large datasets that do not fit into memory. Additionally, you can find classes to query samples of instrument sounds from <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>.
 
 In the 'examples' folder you can find use cases for the classes above for the case of music source separation. We provide code for feature computation (STFT) and for training convolutional neural networks for music source separation: singing voice source separation with the dataset iKala dataset, for voice, bass, drums separation with DSD100 dataset, for bassoon, clarinet, saxophone, violin with <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>. The later is a good example for training a neural network with instrument samples from the RWC instrument sound database <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>, when the original score is available. 
 
@@ -39,7 +39,7 @@ where :
 - \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOa3ZMSmhwRkwzaGM">this address</a>
 
 
-# Data generation
+# Feature computation
 Compute the features for a given set of audio signals extending the "Transform" class in transform.py
 
 For instance the TransformFFT class helps computing the STFT of an audio signal and saves the magnitude spectrogram as a binary file.   
@@ -88,7 +88,34 @@ Example
     #get the audio vector for the note      
     audio = note.getAudio()
     
-    
+# Data generation
+Bach10 experiments offer examples of data generation (or augmentation). Starting from the score or from existing pieces, we can augment the existing data or generate new data with some desired factors.
+For instance if you have four factors time_shifts,intensity_shifts,style_shifts,timbre_shifts, you can generate the possible combinations between them for a set of pieces and instruments(sources).
+
+    #create the product of these factors
+    cc=[(time_shifts[i], intensity_shifts[j], style_shifts[l], timbre_shifts[k]) for i in xrange(len(time_shifts)) for j in xrange(len(intensity_shifts)) for l in xrange(len(style_shifts)) for k in xrange(len(timbre_shifts))]
+   
+    #create combinations for each of the instruments (sources)
+    if len(cc)<len(sources):
+        combo1 = list(it.product(cc,repeat=len(sources)))
+        combo = []    
+        for i in range(len(combo1)):
+          c = np.array(combo1[i])        
+          #if (all(x == c[0,0] for x in c[:,0]) or all(x == c[0,1] for x in c[:,1])) \
+          if (len(intensity_shifts)==1 and not(all(x == c[0,0] for x in c[:,0]))) \
+            or (len(time_shifts)==1 and not(all(x == c[0,1] for x in c[:,1]))):
+              combo.append(c)
+        combo = np.array(combo)
+    else:
+        combo = np.array(list(it.permutations(cc,len(sources))))
+    if len(combo)==0:
+        combo = np.array([[[time_shifts[0],intensity_shifts[0],style_shifts[0],timbre_shifts[0]] for s in sources]])
+
+    #if there are too many combination, you can just randomly sample
+    if sample_size<len(combo):
+        sampled_combo = combo[np.random.choice(len(combo),size=sample_size, replace=False)]
+    else:
+        sampled_combo = combo
 
 # References
 More details on the separation method can be found in the following article:
