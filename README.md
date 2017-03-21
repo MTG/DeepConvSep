@@ -195,7 +195,7 @@ If you want to compute the features and re-train the models, check the 'examples
 
 If you want to evaluate the methods in <a href="https://zenodo.org/record/344499#.WNFjMN-i7J8">Bach10 Separation SMC2017 dataset</a>, then you can use the scripts in evaluation directory, which we explained above in the 'Evaluation' section.
 
-If you want to replicate the plots in the SMC2017 paper, you can run the script in the plots subfolder: 
+If you want to replicate the plots in the SMC2017 paper, you need to have installed 'pandas' and 'seaborn' (pip install pandas seaborn) and then run the script in the plots subfolder: 
 
     bach10_smc_stats.py --db 'path-to-results-dir'
 
