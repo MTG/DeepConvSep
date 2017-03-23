@@ -36,39 +36,7 @@ import time
 import threading
 
 
-
-def buffered_gen(source_gen, buffer_size=2, sleep_time=1):
-    """
-    Generator that runs a slow source generator in a separate thread.
-    buffer_size: the maximal number of items to pre-generate (length of the buffer)
-    """
-    buffer = Queue.Queue(maxsize=buffer_size)
-
-    def _buffered_generation_thread(source_gen, buffer):
-        while True:
-            # we block here when the buffer is full. There's no point in generating more data
-            # when the buffer is full, it only causes extra memory usage and effectively
-            # increases the buffer size by one.
-            while buffer.full():
-                #print "DEBUG: buffer is full, waiting to generate more data."
-                time.sleep(sleep_time)
-
-            try:
-                data = source_gen.next()
-            except StopIteration:
-                break
-
-            buffer.put(data)
-    
-    thread = threading.Thread(target=_buffered_generation_thread, args=(source_gen, buffer))
-    thread.setDaemon(True)
-    thread.start()
-    
-    while True:
-        yield buffer.get()
-        buffer.task_done()
-
-
+#routines to read and write audio
 def infoAudioScipy(filein):
     sampleRate, audioObj = scipy.io.wavfile.read(filein)  
     bitrate = audioObj.dtype    
@@ -90,6 +58,7 @@ def writeAudioScipy(fileout,audio_out,sampleRate,bitrate="int16"):
     scipy.io.wavfile.write(filename=fileout, rate=sampleRate, data=(audio_out*maxn).astype(bitrate))
 
 
+#circular shift audio with 'cs'
 def circular_shift(audio,min_size,cs=0.1,sampleRate=44100):
     if cs == 0:
         if len(audio) > min_size:
@@ -155,7 +124,7 @@ MIDI_A4 = 69   # MIDI Pitch number
 FREQ_A4 = 440. # Hz
 SEMITONE_RATIO = 2. ** (1. / 12.) # Ascending
 def midi2freq(midi_number, tuning_freq=440., MIDI_A4=69.):
-  return tuning_freq * 2 ** ((midi_number - MIDI_A4) * (1./12.))
+  return float(tuning_freq) * 2.0 ** ((float(midi_number) - float(MIDI_A4)) * (1./12.))
 
 
 def gaussian1d(height, center_x, width_x):
@@ -167,12 +136,33 @@ def gaussian1d(height, center_x, width_x):
 def gaussian(x, mu, sig):
     return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 
+#removes overlap between two intervals
+def remove_overlap(ranges):
+    result = []
+    current_start = -1
+    current_stop = -1 
+
+    for start, stop in sorted(ranges):
+        if start > current_stop:
+            # this segment starts after the last segment stops
+            # just add a new segment
+            result.append( (start, stop) )
+            current_start, current_stop = start, stop
+        else:
+            # segments overlap, replace
+            result[-1] = (current_start, stop)
+            # current_start already guaranteed to be lower
+            current_stop = max(current_stop, stop)
+
+    return result
+
+
 #code to compute frequency bands of the harmonic partials for a given pitch
 def slicefft(pitch,size,interval=30,tuning_freq=440,nharmonics=20,fmin=25,fmax=18000,iscale = 'lin',sampleRate=44100):
     if pitch>0:
         binfactor = size/float(sampleRate)
         fups,fdowns = getfreqs(pitch,interval=interval,tuning_freq=tuning_freq,nharmonics=nharmonics)
-        slices_y = np.hstack(tuple([range(int(fdowns[f]*binfactor),int(fups[f]*binfactor)+2) for f in range(len(fups)) \
+        slices_y = np.hstack(tuple([range(int(np.floor(fdowns[f]*binfactor)),int(np.ceil(fups[f]*binfactor)+2)) for f in range(len(fups)) \
             if int(fdowns[f]*binfactor)>=0 and int(fdowns[f]*binfactor)<=(size/2+1) and int(fdowns[f]*binfactor)>0]))
     else:
         slices_y = []
@@ -180,49 +170,15 @@ def slicefft(pitch,size,interval=30,tuning_freq=440,nharmonics=20,fmin=25,fmax=1
 
 def slicefft_slices(pitch,size,interval=30,tuning_freq=440,nharmonics=20,fmin=25,fmax=18000,iscale = 'lin',sampleRate=44100):
     if pitch>0:
-        binfactor = size/float(sampleRate)
+        binfactor = float(size)/float(sampleRate)
         fups,fdowns = getfreqs(pitch,interval=interval,tuning_freq=tuning_freq,nharmonics=nharmonics)
-        slices_y = [slice(int(fdowns[f]*binfactor),int(fups[f]*binfactor)+2) for f in range(len(fups)) \
-            if int(fdowns[f]*binfactor)>=0 and int(fdowns[f]*binfactor)<=(size/2+1) and int(fdowns[f]*binfactor)>0]
+        ranges = tuple((1+int(np.floor(fdowns[f]*binfactor)), 1+int(np.ceil(fups[f]*binfactor))) for f in range(len(fdowns)))
+        ranges = remove_overlap(ranges)
+        slices_y = [slice(ranges[f][0],ranges[f][1]) for f in range(len(ranges)) if ranges[f][1]<=(size/2+1)]
     else:
         slices_y = []
     return slices_y
 
-def slicecqt(pitch,size,interval=70,tuning_freq=440,nharmonics=20,fmin=25,fmax=18000,iscale = 'lin',sampleRate=44100):
-    if pitch>0:
-        c2f = (2.0**(interval/1200.0)) 
-        from nsgt import LinScale,LogScale,OctScale
-        scales = {'log':LogScale,'lin':LinScale,'oct':OctScale}
-        scale = scales[iscale]
-        scl = scale(fmin,fmax,size)
-        if iscale=='lin':
-            df = (fmax-fmin)/float(size-1)
-            centsperbin = 1200.0*np.log2(float(fmax)/fmin)/(size-1)
-            band=np.maximum(1,int(interval/centsperbin))
-        elif iscale=='log':
-            odiv = np.log2(fmax/fmin)/(float(size))
-            pow2n = 2**odiv          
-            fups,fdowns = getfreqs(pitch,interval=interval,tuning_freq=tuning_freq,nharmonics=nharmonics)
-            if iscale=='lin':
-                slices_y = [slice(int(np.maximum(0,np.floor((fdowns[h]-fmin)/df))), int(np.ceil((fups[h]-fmin)/df))) \
-                    for h in range(len(fups)) if int(np.ceil((fups[h]-fmin)/df))<size]
-            elif iscale=='log':
-                slices_t = [slice(int(np.maximum(0,np.log(fdowns[h]/fmin)/np.log(pow2n))), \
-                    int(np.ceil(np.log(fups[h]/fmin)/np.log(pow2n)))) \
-                    for h in range(len(fups)) if int(np.ceil(np.log(fups[h]/fmin)/np.log(pow2n)))<size \
-                    and  int(np.ceil(np.log(fups[h]/fmin)/np.log(pow2n)))>0]                     
-                fact = interval/1200.0 
-                slices_y = np.array([[int(np.maximum(0,slices_t[h].start-(size-slices_t[h].start)*fact)), \
-                    int(np.ceil(slices_t[h].stop+(size-slices_t[h].stop)*fact))] \
-                    for h in range(len(slices_t)) if int(np.ceil(slices_t[h].stop+(size-slices_t[h].stop)*fact))<size],dtype=int)                    
-                #slices_y = fixoverlap(slices_y)
-                slices_y = np.hstack(tuple([range(int(sl[0]),int(sl[1])) for sl in slices_y]))             
-                #ss = [slice(int(sl[0]),int(sl[1])) for sl in slices_y]
-                # if not isinstance(slices_y[0],int):
-                #   import pdb;pdb.set_trace()
-    else:
-        slices_y = []
-    return slices_y
 
 def getfreqs(midinote,interval=30,tuning_freq=440,nharmonics=20,ismidi=True):
     factor = 2.0**(interval/1200.0)
@@ -231,14 +187,7 @@ def getfreqs(midinote,interval=30,tuning_freq=440,nharmonics=20,ismidi=True):
     else:
         f0 = midinote
     fdowns = [f * f0 / float(factor) for f in range(1,nharmonics)]
-    fups = [f * f0 * float(factor) for f in range(1,nharmonics)]
-    for k in range(2,len(fups)):
-        if fups[k-1]>fdowns[k]:
-            v = (fups[k-1]-fdowns[k])/2.0 
-            fups[k-1] = fups[k-1] - v
-            fdowns[k] = fdowns[k] + v 
-    if (fups[-1]-fdowns[-1])>(fups[-2]-fdowns[-2]):
-        fups[-1] = fdowns[-1] + fups[-2]-fdowns[-2]
+    fups = [f * f0 * float(factor) for f in range(1,nharmonics)] 
     return fups,fdowns
 
 def fixoverlap(slices):
@@ -266,148 +215,6 @@ def getPitches(pitch,shape_time,interp='zero'):
             pitchr[i,p,:] = f(x_new)
     return pitchr
 
-def getBands1(bins=48, interval=20, iscale='lin', frameSize=1024, fmin=50, fmax=14000, ttype='fft',sampleRate=44100):
-        iscale=iscale
-        from nsgt import LinScale,LogScale,OctScale
-        scales = {'log':LogScale,'lin':LinScale,'oct':OctScale}
-        scale = scales[iscale]
-        scl = scale(fmin,fmax-1,8)
-        if ttype == 'cqt':
-            fsampled = scl.F()
-        else:
-            fsampled = octaves(8,fmin,fmax-1)
-        if ttype == 'cqt':
-            if iscale=='lin':
-                freqs = [fmin]+[2*fmin*k for k in range(1,100) if fmin/2*k<=fmax]
-            elif iscale=='log':
-                # freqs = [55*k for k in range(1,2)]
-                freqs = [fmin]+[2*fmin*k for k in range(1,100) if fmin/2*k<=fmax]
-                #freqs = scl.F()
-        else: 
-            freqs = [fmin]+[2*fmin*k for k in range(1,100)]
-        factor = 2.0**(interval/1200.0)
-        fdowns = [f / float(factor) for f in freqs]
-        fups = [f * float(factor) for f in freqs]
-        import pdb;pdb.set_trace()
-        for k in range(2,len(fups)):
-            if fups[k-1]>fdowns[k]:
-                v = (fups[k-1]-fdowns[k])/2.0 
-                fups[k-1] = fups[k-1] - v
-                fdowns[k] = fdowns[k] + v 
-        if (fups[-1]-fdowns[-1])>(fups[-2]-fdowns[-2]):
-                fups[-1] = fdowns[-1] + fups[-2]-fdowns[-2]
-
-        if iscale=='lin':
-            df = (fmax-fmin)/float(bins-1)
-        elif iscale=='log':
-            odiv = np.log2(fmax/fmin)/(float(bins))
-            pow2n = 2**odiv
-        if ttype == 'cqt':
-            if iscale=='lin':
-                bands = [np.maximum(1,int(np.ceil((fups[h]-fmin)/df - (fdowns[h]-fmin)/df))) for h in range(len(fups))]
-            elif iscale=='log':
-                slices_t = [slice(int(np.maximum(0,np.log(fdowns[h]/fmin)/np.log(pow2n))), \
-                    int(np.ceil(np.log(fups[h]/fmin)/np.log(pow2n)))) \
-                    for h in range(len(fups)) if int(np.ceil(np.log(fups[h]/fmin)/np.log(pow2n)))<bins]                     
-                fact = interval/1200.0 
-                slices_y = [[int(np.maximum(0,slices_t[h].start-(bins-slices_t[h].start)*fact)), \
-                    int(np.ceil(slices_t[h].stop+(bins-slices_t[h].stop)*fact))] \
-                    for h in range(len(slices_t)) if int(np.ceil(slices_t[h].stop+(bins-slices_t[h].stop)*fact))<bins]                     
-                slices_y = fixoverlap(slices_y)
-                bands = [np.maximum(1,int(np.ceil(sl[1]-sl[0]))) for sl in slices_y]
-        else:
-            binfactor = frameSize/float(sampleRate)
-            bands = [np.maximum(1,int(np.ceil(fups[h]*binfactor - fdowns[h]*binfactor))) for h in range(len(fups))]
-        freqs = freqs[:len(bands)]
-        if iscale=='log' and bands[0]<bands[1]:
-            bands[1]=(2*bands[0]+bands[1])/2
-            freqs[-2] = (freqs[-2] + freqs[-1])/2
-            bands = bands[1:len(bands)]
-            freqs = freqs[1:len(freqs)]
-        elif iscale=='lin' and bands[-1]<bands[-2]:
-            bands[-2]=(2*bands[-1]+bands[-2])/2
-            freqs[-2] = (freqs[-2] + freqs[-1])/2
-            bands = bands[:len(bands)-1]
-            freqs = freqs[:len(freqs)-1]
-        
-        from bisect import bisect_left
-        sel_freqs =  [freqs[np.minimum(len(freqs)-1,bisect_left(freqs, f))] for f in fsampled]
-        sel_bands =  [bands[np.minimum(len(freqs)-1,bisect_left(freqs, f))] for f in fsampled]
-        usf=list(set(sel_bands))
-        idx = [sel_bands.index(b) for b in usf]
-        sfreqs = [sel_freqs[i] for i in idx]
-        sbands = [sel_bands[i] for i in idx]
-        return sfreqs,sbands
-
-def getBands(bins=48, interval=20, iscale='lin', frameSize=1024, fmin=50, fmax=14000, ttype='fft',sampleRate=44100):
-        from nsgt import LinScale,LogScale,OctScale
-        scales = {'log':LogScale,'lin':LinScale,'oct':OctScale}
-        scale = scales[iscale]
-        scl = scale(fmin,fmax-1,8)
-        if ttype == 'cqt':
-            fsampled = scl.F()
-        else:
-            fsampled = octaves(8,fmin,fmax-1)
-        if ttype == 'cqt':
-            if iscale=='lin':
-                freqs = [fmin]+[2*fmin*k for k in range(1,100) if fmin/2*k<=fmax]
-            elif iscale=='log':
-                # freqs = [55*k for k in range(1,2)]
-                freqs = [fmin]+[2*fmin*k for k in range(1,100) if fmin/2*k<=fmax]
-                #freqs = scl.F()
-        else: 
-            freqs = [fmin]+[2*fmin*k for k in range(1,100)]
-        factor = 2.0**(interval/1200.0)
-        fdowns = [f / float(factor) for f in freqs]
-        fups = [f * float(factor) for f in freqs]
-        for k in range(2,len(fups)):
-            if fups[k-1]>fdowns[k]:
-                v = (fups[k-1]-fdowns[k])/2.0 
-                fups[k-1] = fups[k-1] - v
-                fdowns[k] = fdowns[k] + v 
-        if (fups[-1]-fdowns[-1])>(fups[-2]-fdowns[-2]):
-                fups[-1] = fdowns[-1] + fups[-2]-fdowns[-2]
-        if iscale=='lin':
-            df = (fmax-fmin)/float(bins-1)
-        elif iscale=='log':
-            odiv = np.log2(fmax/fmin)/(float(bins))
-            pow2n = 2**odiv
-        if ttype == 'cqt':
-            if iscale=='lin':
-                bands = [np.maximum(1,int(np.ceil((fups[h]-fmin)/df - (fdowns[h]-fmin)/df))) for h in range(len(fups))]
-            elif iscale=='log':
-                slices_t = [slice(int(np.maximum(0,np.log(fdowns[h]/fmin)/np.log(pow2n))), \
-                    int(np.ceil(np.log(fups[h]/fmin)/np.log(pow2n)))) \
-                    for h in range(len(fups)) if int(np.ceil(np.log(fups[h]/fmin)/np.log(pow2n)))<bins]                     
-                fact = interval/1200.0 
-                slices_y = [[int(np.maximum(0,slices_t[h].start-(bins-slices_t[h].start)*fact)), \
-                    int(np.ceil(slices_t[h].stop+(bins-slices_t[h].stop)*fact))] \
-                    for h in range(len(slices_t)) if int(np.ceil(slices_t[h].stop+(bins-slices_t[h].stop)*fact))<bins]                     
-                slices_y = fixoverlap(slices_y)
-                bands = [np.maximum(1,int(np.ceil(sl[1]-sl[0]))) for sl in slices_y]
-        else:
-            binfactor = frameSize/float(sampleRate)
-            bands = [np.maximum(1,int(np.ceil(fups[h]*binfactor - fdowns[h]*binfactor))) for h in range(len(fups))]
-        freqs = freqs[:len(bands)]
-        if iscale=='log' and bands[0]<bands[1]:
-            bands[1]=(2*bands[0]+bands[1])/2
-            freqs[-2] = (freqs[-2] + freqs[-1])/2
-            bands = bands[1:len(bands)]
-            freqs = freqs[1:len(freqs)]
-        elif iscale=='lin' and bands[-1]<bands[-2]:
-            bands[-2]=(2*bands[-1]+bands[-2])/2
-            freqs[-2] = (freqs[-2] + freqs[-1])/2
-            bands = bands[:len(bands)-1]
-            freqs = freqs[:len(freqs)-1]
-        
-        from bisect import bisect_left
-        sel_freqs =  [freqs[np.minimum(len(freqs)-1,bisect_left(freqs, f))] for f in fsampled]
-        sel_bands =  [bands[np.minimum(len(freqs)-1,bisect_left(freqs, f))] for f in fsampled]
-        usf=list(set(sel_bands))
-        idx = [sel_bands.index(b) for b in usf]
-        sfreqs = [sel_freqs[i] for i in idx]
-        sbands = [sel_bands[i] for i in idx]
-        return sfreqs,sbands
 
 
 def generate_overlapadd(allmix,input_size=513,time_context=30, overlap=10,batch_size=32,sampleRate=44100):
@@ -519,8 +326,8 @@ def overlapadd_multi(fbatch,obatch,nchunks,overlap=10):
 
 
 ## read a txt containing midi notes : onset,offset,midinote
-def getMidi(instrument,FilePath,beginTime,finishTime,samplerate,hop,window,timeSpan_on,timeSpan_off,nframes):
-    #midifile = FilePath+instrument.replace('.txt','_1.txt')
+def getMidi(instrument,FilePath,beginTime,finishTime,samplerate,hop,window,timeSpan_on,timeSpan_off,nframes,nlines=1,fermata=0.):
+    fermata = np.maximum(timeSpan_off,fermata)
     midifile = os.path.join(FilePath,instrument + '.txt')
     melodyFromFile = np.genfromtxt(midifile, comments='!', \
       delimiter=',',names="a,b,c",dtype=["f","f","S3"])
@@ -576,15 +383,33 @@ def getMidi(instrument,FilePath,beginTime,finishTime,samplerate,hop,window,timeS
                 i=i-1
             i=i+1
 
-        melody = np.zeros(nframes)
+        melody = np.zeros((nlines,nframes))
         maxAllowed_on = int(round(timeSpan_on * float(samplerate / hop)))
         maxAllowed_off = int(round(timeSpan_off * float(samplerate / hop)))
         endMelody = int((finishTime-beginTime) * round(float(samplerate / hop)))
         w = window/2/hop
         for i in range(len(melTimeStampsEnd)):
             melodyBegin = np.maximum(0,int(melTimeStampsBegin[i] * round(float(samplerate / hop))) - maxAllowed_on)
-            melodyEnd = np.minimum(nframes,np.minimum(endMelody,int(melTimeStampsEnd[i] * round(float(samplerate / hop))) + maxAllowed_off))
-            melody[melodyBegin:melodyEnd]=str2midi(melNotesMIDI[i])
+            intersect = [mb for mb,me in zip(melTimeStampsBegin,melTimeStampsEnd) if (mb>melTimeStampsBegin[i]) and (me+timeSpan_off)>=(melTimeStampsBegin[i]-timeSpan_on) and (mb-timeSpan_on)<=(melTimeStampsEnd[i]+timeSpan_off) ]
+            if len(intersect)==0:
+                notesafter = filter(lambda x: (x-timeSpan_on)>(melTimeStampsEnd[i] +timeSpan_off), melTimeStampsBegin)
+                if len(notesafter)>0:
+                    #import pdb;pdb.set_trace()
+                    newoffset= np.minimum(melTimeStampsEnd[i] + fermata, np.maximum(0,min(notesafter)-timeSpan_on) )
+                else:
+                    newoffset= melTimeStampsEnd[i] + fermata
+                melodyEnd = np.minimum(nframes,np.minimum(endMelody,int(newoffset * round(float(samplerate / hop)))))
+            else:
+                melodyEnd = np.minimum(nframes,np.minimum(endMelody,int(melTimeStampsEnd[i] * round(float(samplerate / hop))) + maxAllowed_off))
+            
+            l=0
+            if nlines>1:
+                while l<nlines and np.sum(melody[l,melodyBegin:melodyEnd])>0:
+                    l=l+1 
+                if l>=nlines:
+                    l=nlines-1
+                    print "no space to store note: "+str(i)
+            melody[l,melodyBegin:melodyEnd]=str2midi(melNotesMIDI[i])
         
         melodyBegin = [np.maximum(0,mel - timeSpan_on) for mel in melTimeStampsBegin]
         melodyEnd = [np.minimum(finishTime-beginTime,mel + timeSpan_off) for mel in melTimeStampsEnd]
