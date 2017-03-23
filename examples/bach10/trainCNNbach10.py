@@ -417,7 +417,7 @@ if __name__ == "__main__":
         if kwargs.__getattribute__('feature_path'):
             feature_path = kwargs.__getattribute__('feature_path')
         else:
-            feature_path=os.path.join(dbs,'transforms','t3_rwc') 
+            feature_path=os.path.join(db,'transforms','t3') 
         assert os.path.isdir(db), "Please input the directory for the Bach10 dataset with --db path_to_Bach10"
         assert os.path.isdir(dbs), "Please input the directory for the Bach10 Sibelius dataset with --dbs path_to_Bach10Sibelius"    
         assert os.path.isdir(feature_path), "Please input the directory where you stored the training features --feature_path path_to_features"  
@@ -425,7 +425,7 @@ if __name__ == "__main__":
         if kwargs.__getattribute__('model'):
             model = kwargs.__getattribute__('model')
         else:
-            model="CNNrwc"    
+            model="CNNbach10"    
         if kwargs.__getattribute__('batch_size'):
             batch_size = int(kwargs.__getattribute__('batch_size')) 
         else:
@@ -474,24 +474,15 @@ if __name__ == "__main__":
             skip = int(kwargs.__getattribute__('skip')) 
         else:
             skip = False
-        if kwargs.__getattribute__('original'):
-            original = int(kwargs.__getattribute__('original')) 
-        else:
-            original = True
 
-    if original:
-        style = ['original']
-    else:
-        style = ['gt']
     path_in = []
     testfile_list = []
 
+    path_in = feature_path
     for f in sorted(os.listdir(db)):
         if os.path.isdir(os.path.join(db,f)) and f[0].isdigit():
             testfile_list.append(f)  
-            for s in style:
-                if os.path.exists(os.path.join(feature_path,f,s)):
-                    path_in.append(os.path.join(feature_path,f,s))
+         
     
     #tt object needs to be the same as the one in compute_features
     tt=transformFFT(frameSize=4096, hopSize=512, sampleRate=44100, window=blackmanharris)

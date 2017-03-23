@@ -39,6 +39,7 @@ if __name__ == "__main__":
         db = kwargs.__getattribute__('db')
     else:
         db='/home/marius/Documents/Database/Bach10/Source separation/' 
+        # db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Source separation/'  
     if kwargs.__getattribute__('feature_path'):
         feature_path = kwargs.__getattribute__('feature_path')
     else:
@@ -99,7 +100,6 @@ if __name__ == "__main__":
                                 nframes = int(np.ceil(len(sounds) / np.double(tt.hopSize))) + 2
                                 size = int(len(sounds)-int(np.max(np.array(c[:,0]))*sampleRate))
                                 audio = np.zeros((size,len(sources)+1))
-                                melody = np.zeros((len(sources),1,nframes))
                             
                             if c[i,0] == 0:
                                 if len(sounds) > size:
@@ -122,10 +122,8 @@ if __name__ == "__main__":
                             audio[:,0] = audio[:,0] + c[i,1] * segment[:size]
                             audio[:,i+1] = c[i,1] * segment[:size]
 
-                            melody[i,0:1,:],melodyBegin,melodyEnd,melNotes = util.getMidi(sources_midi[i]+'_g'+style_midi[s],os.path.join(db,f),0,40.0,sampleRate,tt.hopSize,tt.frameSize,c[i,0],c[i,0],nframes)
-
                             segment = None
                             sounds = None
 
-                        tt.compute_transform(audio,os.path.join(feature_path,style[s],f+'.data'),pitch=melody,phase=False,pitch_interp='zero')
+                        tt.compute_transform(audio,os.path.join(feature_path,style[s],f+'.data'),phase=False)
                     

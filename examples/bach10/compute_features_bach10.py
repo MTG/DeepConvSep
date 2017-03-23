@@ -36,7 +36,8 @@ if __name__ == "__main__":
     if kwargs.__getattribute__('db'):
         db = kwargs.__getattribute__('db')
     else:
-        db='/home/marius/Documents/Database/Bach10/'  
+        db='/home/marius/Documents/Database/Bach10/Sources/'  
+        # db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Sources/'  
     if kwargs.__getattribute__('feature_path'):
         feature_path = kwargs.__getattribute__('feature_path')
     else:
@@ -47,24 +48,22 @@ if __name__ == "__main__":
     sources_midi = ['bassoon','clarinet','saxophone','violin']
 
     #compute transform
-    for f in os.listdir(os.path.join(db,'Sources')):
-        if os.path.isdir(os.path.join(db,'Sources',f)) and f[0].isdigit() :
+    for f in os.listdir(db):
+        if os.path.isdir(os.path.join(db,f)) and f[0].isdigit() :
             if not f.startswith('.'):
                 for i in range(len(sources)):
                     #read the audio file
-                    audioObj, sampleRate, bitrate = util.readAudioScipy(os.path.join(db,'Sources',f,f+'-'+sources[i]+'.wav'))
+                    audioObj, sampleRate, bitrate = util.readAudioScipy(os.path.join(db,f,f+'-'+sources[i]+'.wav'))
                  
                     if i==0:
                         tt=transformFFT(frameSize=4096, hopSize=512, sampleRate=44100, window=blackmanharris)
                         nframes = int(len(audioObj)/tt.hopSize)
                         audio = np.zeros((audioObj.shape[0],len(sources)+1))
-                        melody = np.zeros((len(sources),1,nframes))
                     audio[:,0] = audio[:,0] + audioObj
                     audio[:,i+1] = audioObj
                     audioObj=None 
-                    melody[i,0:1,:],melodyBegin,melodyEnd,melNotes = util.getMidi(sources_midi[i]+'_g',os.path.join(db,'Sources',f),0,40.0,sampleRate,tt.hopSize,tt.frameSize,0,0,nframes)
-                
+           
                 if not os.path.exists(feature_path):
                     os.makedirs(feature_path)
-                tt.compute_transform(audio,os.path.join(feature_path,f+'.data'),pitch=melody,phase=False,pitch_interp='zero')
+                tt.compute_transform(audio,os.path.join(feature_path,f+'.data'),phase=False)
             

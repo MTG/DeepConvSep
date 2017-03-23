@@ -355,7 +355,13 @@ if __name__ == "__main__":
     Parameters
     ----------
     db : string
-        The path to the iKala dataset  
+        The path to the Bach10 dataset  
+    dbs : string
+        The path to the Bach10 Sibelius dataset  
+    feature_path : string
+        The path where to load the features from 
+    output : string
+        The path where to save the output 
     nepochs : int, optional
         The number the epochs to train for (one epoch is when all examples in the dataset are seen by the network)
     model : string, optional
@@ -374,7 +380,9 @@ if __name__ == "__main__":
         The number of CPU to use when loading the data in parallel: the more, the faster (see LargeDataset in dataset.py)
     """
     if len(sys.argv)>-1:
-        climate.add_arg('--db', help="the ikala dataset path")
+        climate.add_arg('--db', help="the Bach10 dataset path")
+        climate.add_arg('--dbs', help="the Bach10 Sibelius dataset path")
+        climate.add_arg('--output', help="the path where to save the model and the output")
         climate.add_arg('--model', help="the name of the model to test/save")
         climate.add_arg('--nepochs', help="number of epochs to train the net")
         climate.add_arg('--time_context', help="number of frames for the recurrent/lstm/conv net")
@@ -393,16 +401,30 @@ if __name__ == "__main__":
         if kwargs.__getattribute__('db'):
             db = kwargs.__getattribute__('db')
         else:
-            db='/home/marius/Documents/Database/Bach10/'  
+            db='/home/marius/Documents/Database/Bach10/Sources/'
+            # db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Sources/'  
+        if kwargs.__getattribute__('dbs'):
+            dbs = kwargs.__getattribute__('dbs')
+        else:
+            dbs='/home/marius/Documents/Database/Bach10/Source separation/'
+            # dbs='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Source separation/'    
+        if kwargs.__getattribute__('output'):
+            output = kwargs.__getattribute__('output')
+        else:
+            output='/home/marius/Documents/Database/Bach10/'
+            # output='/Volumes/Macintosh HD 2/Documents/Database/Bach10/'  
         if kwargs.__getattribute__('feature_path'):
             feature_path = kwargs.__getattribute__('feature_path')
         else:
-            feature_path=os.path.join(db,'Source separation','transforms','t3_synth_aug_more') 
-        assert os.path.isdir(db), "Please input the directory for the Bach10 dataset with --db path_to_Bach10"  
+            feature_path=os.path.join(dbs,'transforms','t3_synth_aug_more') 
+        assert os.path.isdir(db), "Please input the directory for the Bach10 dataset with --db path_to_Bach10"
+        assert os.path.isdir(dbs), "Please input the directory for the Bach10 Sibelius dataset with --dbs path_to_Bach10Sibelius"    
+        assert os.path.isdir(feature_path), "Please input the directory where you stored the training features --feature_path path_to_features"  
+        assert os.path.isdir(output), "Please input the output directory --output path_to_output"  
         if kwargs.__getattribute__('model'):
             model = kwargs.__getattribute__('model')
         else:
-            model="fft_synth_one_aug_more_4096_blind_nomp_all_gt"    
+            model="CNNsibelius"    
         if kwargs.__getattribute__('batch_size'):
             batch_size = int(kwargs.__getattribute__('batch_size')) 
         else:
@@ -455,8 +477,8 @@ if __name__ == "__main__":
     path_in = []
     testfile_list = []
 
-    for f in sorted(os.listdir(os.path.join(db,'Sources'))):
-        if os.path.isdir(os.path.join(db,'Sources',f)) and f[0].isdigit():
+    for f in sorted(os.listdir(db)):
+        if os.path.isdir(os.path.join(db,f)) and f[0].isdigit():
             testfile_list.append(f)  
 
     for s in style:
@@ -472,17 +494,17 @@ if __name__ == "__main__":
     logging.info("  Standard dev:\t\t{:.6f}".format(ld1.getStd()))
 
     
-    if not os.path.exists(os.path.join(db,'output',model)):
-        os.makedirs(os.path.join(db,'output',model))
-    if not os.path.exists(os.path.join(db,'models')):
-        os.makedirs(os.path.join(db,'models'))
-    if not os.path.exists(os.path.join(db,'output',model+"_original")):
-        os.makedirs(os.path.join(db,'output',model+"_original"))
+    if not os.path.exists(os.path.join(output,'output',model)):
+        os.makedirs(os.path.join(output,'output',model))
+    if not os.path.exists(os.path.join(output,'models')):
+        os.makedirs(os.path.join(output,'models'))
+    if not os.path.exists(os.path.join(output,'output',model+"_original")):
+        os.makedirs(os.path.join(output,'output',model+"_original"))
 
-    train_errs=train_auto(train=ld1,fun=build_ca,transform=tt,outdir=os.path.join(db,'output',model),testdir=os.path.join(db,'Sources'),testfile_list=testfile_list,\
-        outdir1=os.path.join(db,'output',model+"_original"),testdir1=os.path.join(db,'Source separation'),testfile_list1=testfile_list,
-        model=os.path.join(db,"models","model_"+model+".pkl"),num_epochs=nepochs,scale_factor=scale_factor_test,load=load,skip_train=skip)  
-    f = file(os.path.join(db,"models","loss_"+model+".data"), 'wb')
+    train_errs=train_auto(train=ld1,fun=build_ca,transform=tt,outdir=os.path.join(output,'output',model),testdir=db,testfile_list=testfile_list,\
+        outdir1=os.path.join(output,'output',model+"_original"),testdir1=dbs,testfile_list1=testfile_list,
+        model=os.path.join(output,"models","model_"+model+".pkl"),num_epochs=nepochs,scale_factor=scale_factor_test,load=load,skip_train=skip)  
+    f = file(os.path.join(output,"models","loss_"+model+".data"), 'wb')
     cPickle.dump(train_errs,f,protocol=cPickle.HIGHEST_PROTOCOL)
     f.close()
 

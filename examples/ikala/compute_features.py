@@ -60,10 +60,10 @@ if __name__ == "__main__":
             audioObj=None
 
             #read pitches so they can be written as separate features 
-            lines = np.loadtxt(os.path.join(db,"PitchLabel",f.replace('wav','pv')), comments="#", delimiter="\n", unpack=False)
+            #lines = np.loadtxt(os.path.join(db,"PitchLabel",f.replace('wav','pv')), comments="#", delimiter="\n", unpack=False)
             
             if not os.path.exists(feature_path):
                 os.makedirs(feature_path)
             #compute the STFT and write the .data file in the folder feature_path
-            tt.compute_transform(audio,os.path.join(feature_path,f.replace('.wav','.data')),pitch=lines[np.newaxis,np.newaxis,:],phase=False)
+            tt.compute_transform(audio,os.path.join(feature_path,f.replace('.wav','.data')),phase=False)
        

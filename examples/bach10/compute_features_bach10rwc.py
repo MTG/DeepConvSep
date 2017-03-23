@@ -118,9 +118,8 @@ class Engine(object):
                   print 'sample rate is not consistent'
               if i==0:
                   audio = np.zeros((size,len(self.sources)+1))
-                  melody = np.zeros((len(self.sources),1,int(nframes)))
-              
-              melody[i,0:1,:],melodyBegin,melodyEnd,melNotes = util.getMidi(self.sources_midi[i]+'_g'+self.style_midi[s],os.path.join(db,f),chunk_start,chunk_end,self.sampleRate,tt.hopSize,tt.frameSize,c[i,0],c[i,0],nframes)
+                  
+              melody,melodyBegin,melodyEnd,melNotes = util.getMidi(self.sources_midi[i]+'_g'+self.style_midi[s],os.path.join(db,f),chunk_start,chunk_end,self.sampleRate,tt.hopSize,tt.frameSize,c[i,0],c[i,0],nframes,1)
   
               #generate the audio, note by note
               for m in range(len(melNotes)):
@@ -139,10 +138,10 @@ class Engine(object):
 
             audio[:,0] = np.sum(audio[:,1:len(self.sources)+1],axis=1)
                 
-            tt.compute_transform(audio,os.path.join(feature_path,f,self.style[s],f+'_'+str(c)+'_'+str(chnk)+'.data'),pitch=melody,phase=False,pitch_interp='zero')
+            tt.compute_transform(audio,os.path.join(feature_path,f,self.style[s],f+'_'+str(c)+'_'+str(chnk)+'.data'),phase=False)
            
             audio = None
-            melody = None
+            melody= None
           except GetOutOfLoop:
             pass
 
@@ -152,7 +151,7 @@ class GetOutOfLoop( Exception ):
 
 if __name__ == "__main__": 
   if len(sys.argv)>-1:
-    climate.add_arg('--db', help="the dataset path")
+    climate.add_arg('--db', help="the Bach10 Sibelius dataset path")
     climate.add_arg('--rwc', help="the rwc instrument sound path with mat and wav subfolders")
     climate.add_arg('--chunk_size', help="the chunk size to split the midi")
     climate.add_arg('--sample_size', help="sample this number of combinations of possible cases")
@@ -163,12 +162,14 @@ if __name__ == "__main__":
     if kwargs.__getattribute__('db'):
       db = kwargs.__getattribute__('db')
     else:
-      db='/home/marius/Documents/Database/Bach10/' 
+      db='/home/marius/Documents/Database/Bach10/Source separation/' 
+      # db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Source separation/'   
       
     if kwargs.__getattribute__('rwc'):
       rwc_path = kwargs.__getattribute__('rwc')
     else:
-      rwc_path='/home/marius/Documents/Database/RWC/'  
+      rwc_path='/home/marius/Documents/Database/RWC/' 
+      # rwc_path='/Volumes/Macintosh HD 2/Documents/Database/RWC/'   
      
     if kwargs.__getattribute__('chunk_size'):
         chunk_size = float(kwargs.__getattribute__('chunk_size'))
@@ -195,7 +196,7 @@ if __name__ == "__main__":
     else:
         original = True
 
-    assert os.path.isdir(db), "Please input the directory for the Bach10 dataset with --db path_to_Bach10"
+    assert os.path.isdir(db), "Please input the directory for the Bach10 Sibelius dataset with --db path_to_Bach10"
     assert os.path.isdir(rwc_path), "Please input the directory for the RWC instrument sound with --db path_to_RWC"
    
     if original:
@@ -218,21 +219,22 @@ if __name__ == "__main__":
         instruments.append(rwc.Instrument(rwc_path,instrument_nums[ins],allowed_styles,allowed_case,allowed_dynamics))
     
     #compute transform
-    for f in sorted(os.listdir(os.path.join(db,'Sources'))):
-        if os.path.isdir(os.path.join(db,'Sources',f)) and f[0].isdigit() :
+    for f in sorted(os.listdir(db)):
+        if os.path.isdir(os.path.join(db,f)) and f[0].isdigit() :
 
           for s in range(len(style)):
 
               if not os.path.exists(os.path.join(feature_path,f,style[s])):
                   os.makedirs(os.path.join(feature_path,f,style[s])) 
         
-              engine = Engine(os.path.join(db,'Sources'),feature_path,instruments,allowed_styles,allowed_dynamics,allowed_case,time_shifts,rwc_path,chunk_size,sample_size,style,style_midi)
+              engine = Engine(db,feature_path,instruments,allowed_styles,allowed_dynamics,allowed_case,time_shifts,rwc_path,chunk_size,sample_size,style,style_midi)
               combos = engine.getCombos() 
               print len(combos)
               try:
                 pool = Pool(nprocs) # on nprocs processors
                 pool.map(engine, combos)
-              except:
+              except Exception as e: 
+                print str(e)
                 pool.terminate()
               finally: # To make sure processes are closed in the end, even if errors happen
                 pool.close()
