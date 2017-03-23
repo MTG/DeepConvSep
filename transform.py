@@ -77,7 +77,7 @@ class Transforms(object):
         self.ttype = ttype
         self.window = window(self.frameSize)
 
-    def compute_transform(self,audio, out_path=None, score=None, pitch=None, phase=False, save=True, pitch_interp='linear'):
+    def compute_transform(self,audio, out_path=None, phase=False, save=True):
         """
         Compute the features for a given set of audio signals.
             The audio signal \"audio\" is a numpy array with the shape (t,i) - t is time and i is the id of signal
@@ -94,9 +94,6 @@ class Transforms(object):
             To return or to save in the out_path the computed features
         phase : bool, optional
             To return/save the phase 
-        pitch : 3D numpy array, optional
-            Give as input the multiple pitch contours for each of the audio files (ninst,npitches,values)
-            The value of the pitch is interpolated so it matches the time dimension of other computed features
         Yields
         ------
         mag : 3D numpy array
@@ -121,22 +118,12 @@ class Transforms(object):
             if phase:
                 phs[i]=ph
 
-        
-        if pitch is not None:
-            pitchr=util.getPitches(pitch,mags.shape[1],interp=pitch_interp)
-
         if save and self.out_path is not None:
             self.saveTensor(mags,'_'+self.suffix+'_m_')
             if phase:
                 self.saveTensor(phs,'_'+self.suffix+'_p_')
-            if score is not None:
-                saveObj(score, self.out_path.replace('.data','_'+self.suffix+'_s_'+'.data'))
-            if pitch is not None:
-                self.saveTensor(pitchr, '_'+self.suffix+'_p_')
             mags = None
             phase = None
-            pitch = None
-            score = None
         else:
             if phase:
                 return mags,phs
