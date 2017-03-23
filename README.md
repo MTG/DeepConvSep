@@ -173,12 +173,12 @@ For Bach10 dataset :
     #train with the original dataset
     python -m examples.bach10.compute_features_bach10 --db '/path/to/Bach10/'
     #train with the the synthetic dataset generated with Sibelius 
-    python -m examples.bach10.compute_features_bach10sibelius --db '/path/to/synthetic/Bach10/'
+    python -m examples.bach10.compute_features_bach10sibelius --db '/path/to/Bach10Sibelius/'
     #train with the rwc dataset 
-    python -m examples.bach10.compute_features_bach10rwc --db '/path/to/Bach10/' --rwc '/path/to/rwc/'
+    python -m examples.bach10.compute_features_bach10rwc --db '/path/to/Bach10Sibelius/' --rwc '/path/to/rwc/'
     ### Replace gpu0 with cpu,gpu,cuda,gpu0 etc. depending on your system configuration
-    THEANO_FLAGS=mode=FAST_RUN,device=gpu0,floatX=float32,lib.cnmem=0.95 python -m examples.bach10.trainCNNrwc --db '/path/to/Bach10/'
-    THEANO_FLAGS=mode=FAST_RUN,device=gpu0,floatX=float32,lib.cnmem=0.95 python -m examples.bach10.trainCNNSibelius --db '/path/to/Bach10/'
+    THEANO_FLAGS=mode=FAST_RUN,device=gpu0,floatX=float32,lib.cnmem=0.95 python -m examples.bach10.trainCNNrwc --db '/path/to/Bach10/' --dbs '/path/to/Bach10Sibelius/' --output '/output/path/'
+    THEANO_FLAGS=mode=FAST_RUN,device=gpu0,floatX=float32,lib.cnmem=0.95 python -m examples.bach10.trainCNNSibelius --db '/path/to/Bach10/' --dbs '/path/to/Bach10Sibelius/' --output '/output/path/'
 
 For iKala :
 
