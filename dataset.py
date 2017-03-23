@@ -110,7 +110,7 @@ class LargeDataset(object):
     
     """
     def __init__(self, path_transform_in=None, path_transform_out=None, sampleRate=44100, exclude_list=[], nsamples=0,
-        batch_size=64, batch_memory=8000, time_context=-1, overlap=5, weighted=False, tensortype=float, scratch_path=None, 
+        batch_size=64, batch_memory=8000, time_context=-1, overlap=5, extra_features=False, tensortype=float, scratch_path=None, 
         log_in=False, log_out=False, mult_factor_in=1., mult_factor_out=1.,nsources=2,pitched=False,save_mask=False,pitch_norm=127,nprocs=2):
     
         self.batch_size = batch_size
@@ -131,7 +131,7 @@ class LargeDataset(object):
         else:
             self.path_transform_out = None
 
-        self.weighted = weighted 
+        self.extra_features = extra_features 
         self.batch_memory = batch_memory #number of batches to keep in memory
         self.mult_factor_in = mult_factor_in
         self.mult_factor_out = mult_factor_out
@@ -199,13 +199,13 @@ class LargeDataset(object):
         This is a wrapper used by the callable \"iterate\" to return a batch between the indices idx0,idx1
         """       
         if self.pitched:   
-            if self.weighted:
-                return [self.batch_inputs[idx0:idx1],self.batch_outputs[idx0:idx1],self.batch_pitches[idx0:idx1],self.batch_weights[idx0:idx1]] 
+            if self.extra_features:
+                return [self.batch_inputs[idx0:idx1],self.batch_outputs[idx0:idx1],self.batch_pitches[idx0:idx1],self.batch_features[idx0:idx1]] 
             else:
                 return [self.batch_inputs[idx0:idx1],self.batch_outputs[idx0:idx1],self.batch_pitches[idx0:idx1]] 
         elif self.save_mask: 
-            if self.weighted:
-                return [self.batch_inputs[idx0:idx1],self.batch_outputs[idx0:idx1],self.batch_masks[idx0:idx1],self.batch_weights[idx0:idx1]]
+            if self.extra_features:
+                return [self.batch_inputs[idx0:idx1],self.batch_outputs[idx0:idx1],self.batch_masks[idx0:idx1],self.batch_features[idx0:idx1]]
             else:
                 return [self.batch_inputs[idx0:idx1],self.batch_outputs[idx0:idx1],self.batch_masks[idx0:idx1]]
         else:
@@ -224,8 +224,8 @@ class LargeDataset(object):
                     self.batch_pitches = self.loadTensor(batch_file+'_pitches.data')
                 elif self.save_mask: 
                     self.batch_masks = self.loadTensor(batch_file+'_masks.data')
-                if self.weighted:
-                    self.batch_weights = self.loadTensor(batch_file+'_weights.data')
+                if self.extra_features:
+                    self.batch_features = self.loadTensor(batch_file+'_features.data')
                 self.shuffleBatches()   
             else: 
                 #generate and save
@@ -254,8 +254,8 @@ class LargeDataset(object):
                 self.batch_pitches[0:self.idxend-self.idxbegin] = x[2]
             elif self.save_mask: 
                 self.batch_masks[0:self.idxend-self.idxbegin] = x[2]     
-            if self.weighted:
-                self.batch_weights[0:self.idxend-self.idxbegin] = x[3]
+            if self.extra_features:
+                self.batch_features[0:self.idxend-self.idxbegin] = x[3]
             x=None
         else:
             x = self.loadFile(self.findex, idxbegin=self.idxbegin)
@@ -265,8 +265,8 @@ class LargeDataset(object):
                 self.batch_pitches[0:self.num_points[self.findex+1]-self.num_points[self.findex]-self.idxbegin] = x[2] 
             elif self.save_mask: 
                 self.batch_masks[0:self.num_points[self.findex+1]-self.num_points[self.findex]-self.idxbegin] = x[2]
-            if self.weighted:
-                self.batch_weights[0:self.num_points[self.findex+1]-self.num_points[self.findex]-self.idxbegin] = x[3]
+            if self.extra_features:
+                self.batch_features[0:self.num_points[self.findex+1]-self.num_points[self.findex]-self.idxbegin] = x[3]
             x=None
 
         #this is where multiprocessing happens
@@ -284,8 +284,8 @@ class LargeDataset(object):
                     self.batch_pitches[idx0:idx1] = x[2]   
                 elif self.save_mask: 
                     self.batch_masks[idx0:idx1] = x[2]
-                if self.weighted:
-                    self.batch_weights[idx0:idx1] = x[3]
+                if self.extra_features:
+                    self.batch_features[idx0:idx1] = x[3]
                 x=None
             xall=None
         
@@ -300,8 +300,8 @@ class LargeDataset(object):
                 self.batch_pitches[idx0:idx1] = x[2]
             elif self.save_mask: 
                 self.batch_masks[idx0:idx1] = x[2]
-            if self.weighted:
-                self.batch_weights[idx0:idx1] = x[3]
+            if self.extra_features:
+                self.batch_features[idx0:idx1] = x[3]
             x=None
                
         #shuffle batches 
@@ -335,7 +335,9 @@ class LargeDataset(object):
             self.nindex = idx_target
 
     def loadPitch(self,id):
-        return self.loadTensor(os.path.join(self.path_transform_in[self.dirid[id]],self.file_list[id].replace('_m_','_p_')))
+        if self.pitch_code is None:
+            self.pitch_code = 'g'
+        return self.loadTensor(os.path.join(self.path_transform_in[self.dirid[id]],self.file_list[id].replace('_m_','_'+self.pitch_code+'_')))
 
     def loadInputOutput(self,id):
         """
@@ -362,17 +364,13 @@ class LargeDataset(object):
                 idxend = self.num_points[id+1] - self.num_points[id] 
             
             if self.pitched:  
-                if self.weighted:
-                    inputs,outputs,pitches,weights = self.initOutput(idxend - idxbegin)
-                else:
-                    inputs,outputs,pitches = self.initOutput(idxend - idxbegin)
+                inputs,outputs,pitches = self.initOutput(idxend - idxbegin)
             elif self.save_mask: 
-                if self.weighted:
-                    inputs,outputs,masks,weights = self.initOutput(idxend - idxbegin)
-                else:
-                    inputs,outputs,masks = self.initOutput(idxend - idxbegin)
+                inputs,outputs,masks = self.initOutput(idxend - idxbegin)
             else:
-                inputs,outputs = self.initOutput(idxend - idxbegin)         
+                inputs,outputs = self.initOutput(idxend - idxbegin)    
+            if self.extra_features:
+                features = self.initFeatures(idxend - idxbegin)     
        
             #loads the .data fft file from the hard drive
             allmixinput,allmixoutput = self.loadInputOutput(id)
@@ -396,14 +394,14 @@ class LargeDataset(object):
             if self.time_context > allmixinput.shape[1]:
                 inputs[0,:allmixinput.shape[1],:] = allmixinput[0]
                 outputs[0, :allmixoutput.shape[1], :allmixoutput.shape[-1]] = allmixoutput[0]
-                if self.weighted:
-                    weights[0, :allmixoutput.shape[1], :] = self.getWeighted(allmixinput[0],allpitch)  
+                if self.extra_features:
+                    features[0, :allmixoutput.shape[1], :] = self.extra_features(allmixinput[0],allpitch)  
                 
                 for j in range(1,self.nsources):
                     outputs[0, :allmixoutput.shape[1], j*allmixoutput.shape[-1]:(j+1)*allmixoutput.shape[-1]] = allmixoutput[j]
                     #import pdb;pdb.set_trace()
-                    # if self.weighted == True:
-                    #     weights[0, :allmixoutput.shape[1], j*allmixoutput.shape[-1]:(j+1)*allmixoutput.shape[-1]] = self.getWeighted(allmixinput[0],allpitch)   
+                    # if self.extra_features == True:
+                    #     features[0, :allmixoutput.shape[1], j*allmixoutput.shape[-1]:(j+1)*allmixoutput.shape[-1]] = self.extra_features(allmixinput[0],allpitch)   
 
                 
                 if self.pitched:
@@ -420,8 +418,8 @@ class LargeDataset(object):
                         inputs[i-idxbegin] = allminput[0]
                         #import pdb;pdb.set_trace()
                         outputs[i-idxbegin, :, :allmoutput.shape[-1]] = allmoutput[0]
-                        if self.weighted:
-                            weights[i-idxbegin, :, :] = self.getWeighted(allminput[0],allpitch[:,:,start:start+self.time_context])   
+                        if self.extra_features:
+                            features[i-idxbegin, :, :] = self.extra_features(allminput[0],allpitch[:,:,start:start+self.time_context])   
                        
                         for j in range(1,self.nsources):
                             outputs[i-idxbegin,:, j*allmoutput.shape[-1]:(j+1)*allmoutput.shape[-1]] = allmoutput[j,:,:]
@@ -448,13 +446,13 @@ class LargeDataset(object):
                 allpitch=None
             
             if self.pitched:  
-                if self.weighted:
-                    return [inputs, outputs, pitches, weights]
+                if self.extra_features:
+                    return [inputs, outputs, pitches, features]
                 else:
                     return [inputs, outputs, pitches]
             elif self.save_mask: 
-                if self.weighted:
-                    return [inputs, outputs, masks, weights]
+                if self.extra_features:
+                    return [inputs, outputs, masks, features]
                 else: 
                     return [inputs, outputs, masks]                    
             else:
@@ -475,8 +473,8 @@ class LargeDataset(object):
             self.batch_pitches[:idxstop] = self.batch_pitches[idxrand]    
         elif self.save_mask: 
             self.batch_masks[:idxstop] = self.batch_masks[idxrand]                             
-        if self.weighted:
-            self.batch_weights[:idxstop] = self.batch_weights[idxrand] 
+        if self.extra_features:
+            self.batch_features[:idxstop] = self.batch_features[idxrand] 
 
 
     def initOutput(self,size):
@@ -488,25 +486,18 @@ class LargeDataset(object):
         if self.pitched:  
             ptc = np.zeros((size, self.time_context, self.npitches*self.ninst), dtype=self.tensortype)  
         elif self.save_mask:  
-            msk = np.zeros((size, self.time_context, self.input_size*self.ninst), dtype=self.tensortype)
-       
-        if self.weighted:
-            weight = np.zeros((size, self.time_context, self.output_size), dtype=self.tensortype)
-        
+            msk = np.zeros((size, self.time_context, self.input_size*self.ninst), dtype=self.tensortype) 
      
         if self.pitched:  
-            if self.weighted:
-                return inp,out,ptc,weight
-            else:
-                return inp,out,ptc
+            return inp,out,ptc
         elif self.save_mask:  
-            if self.weighted:
-                return inp,out,msk,weight
-            else:
-                return inp,out,msk
+            return inp,out,msk
         else:
             return inp,out
 
+    def initFeatures(self,size):
+        features = np.zeros((size, self.time_context, self.output_size), dtype=self.tensortype)
+        return features
 
     def saveBatches(self,batch_file):
         """
@@ -518,8 +509,8 @@ class LargeDataset(object):
             self.saveTensor(self.batch_outputs, batch_file+'_pitches.data')
         if self.save_mask: 
             self.saveTensor(self.batch_outputs, batch_file+'_masks.data')    
-        if self.weighted:
-            self.saveTensor(self.batch_weights, batch_file+'_weights.data')
+        if self.extra_features:
+            self.saveTensor(self.batch_features, batch_file+'_features.data')
 
     def getFeatureSize(self):
         """
@@ -635,8 +626,8 @@ class LargeDataset(object):
         if self.save_mask: 
             self.batch_masks = np.zeros((self.batch_memory*self.batch_size,self.time_context,self.input_size*self.ninst), dtype=self.tensortype)
         
-        if self.weighted == True:
-            self.batch_weights = np.zeros((self.batch_memory*self.batch_size,self.time_context,self.output_size), dtype=self.tensortype)
+        if self.extra_features == True:
+            self.batch_features = np.zeros((self.batch_memory*self.batch_size,self.time_context,self.output_size), dtype=self.tensortype)
         
         self.loadBatches()
 
@@ -697,3 +688,182 @@ class LargeDataset(object):
 
     def batches(self):
         return self.iterate()
+
+
+class LargeDatasetPitch1(LargeDataset):
+    def __init__(self, path_transform_in=None, path_transform_out=None, sampleRate=44100, exclude_list=[],nsamples=0,
+        batch_size=64, batch_memory=1000, time_context=-1, overlap=5, extra_features=False, tensortype=float, scratch_path=None, 
+        log_in=False, log_out=False, mult_factor_in=1., mult_factor_out=1., pitched=True,save_mask=False,pitch_norm=120.,nsources=2,
+        fmin=25, fmax=18000, ttype='fft', iscale = 'lin', patch_size=10, nharmonics=20, interval=30, tuning_freq=440,nprocs=2,pitch_code='g'): 
+        self.fmin=fmin
+        self.fmax=fmax
+        self.iscale=iscale
+        self.patch_size = patch_size
+        self.nharmonics = nharmonics
+        self.interval = interval
+        self.tuning_freq = tuning_freq
+        self.ttype = ttype
+        #self.pitched = True
+        self.save_mask = save_mask
+        self.pitch_norm = pitch_norm  
+        self.extra_features = extra_features      
+        self.nsamples = nsamples
+        self.pitch_code = pitch_code
+        super(LargeDatasetPitch1, self).__init__(path_transform_in=path_transform_in, path_transform_out=path_transform_out, sampleRate=sampleRate, exclude_list=exclude_list, nsamples=nsamples,
+            batch_size=batch_size, batch_memory=batch_memory, time_context=time_context, overlap=overlap, extra_features=extra_features, tensortype=tensortype, scratch_path=scratch_path, nsources=nsources,
+            log_in=log_in, log_out=log_out, mult_factor_in=mult_factor_in, mult_factor_out=mult_factor_out,pitched=pitched,save_mask=save_mask,pitch_norm=pitch_norm,nprocs=nprocs)    
+
+    def filterSpec(self,mag,pitches):
+        filtered = np.zeros((self.ninst,mag.shape[0],mag.shape[1]))
+        for j in range(self.ninst): #for all the inputed instrument pitches
+            for p in range(len(pitches[j])): #for each pitch contour
+                for t in range(len(pitches[j,p])):
+                    if pitches[j,p,t] > 0:
+                        slices_y = util.slicefft_slices(pitches[j,p,t],size=(mag.shape[-1]-1)*2,interval=self.interval,tuning_freq=self.tuning_freq,nharmonics=self.nharmonics,fmin=self.fmin,fmax=self.fmax,iscale=self.iscale,sampleRate=self.sampleRate)
+                        for k in range(len(slices_y)):
+                            filtered[j,t,slices_y[k]] = 1.
+                        slices_y = None
+        #filtered /= np.expand_dims(np.maximum(1e-18,filtered.max(axis=2)),axis=2)
+        mask = np.zeros((mag.shape[0],self.ninst*mag.shape[1]))
+        for j in range(self.ninst): #for all the inputed instrument pitches
+            mask[:,j*mag.shape[1]:(j+1)*mag.shape[1]] = filtered[j,:,:]
+        filtered = None
+
+        # import matplotlib.pyplot as plt
+        # for j in range(self.ninst):
+        #     plt.subplot(211)
+        #     plt.imshow(mag,interpolation='none')
+        #     plt.subplot(212)
+        #     plt.imshow(mask[:,j*mag.shape[1]:(j+1)*mag.shape[1]],interpolation='none')
+        #     plt.show()
+        # #import pdb;pdb.set_trace()
+        j=None
+        p=None
+        t=None
+        k=None
+        return mask
+
+
+
+class LargeDatasetPitch2(LargeDataset):
+    def __init__(self, path_transform_in=None, path_transform_out=None, sampleRate=44100, exclude_list=[],nsamples=0,
+        batch_size=64, batch_memory=1000, time_context=-1, overlap=5, extra_features=False, tensortype=float, scratch_path=None, timbre_model_path=None,
+        log_in=False, log_out=False, mult_factor_in=1., mult_factor_out=1., pitched=True,save_mask=False,pitch_norm=120.,nsources=2,
+        fmin=25, fmax=18000, ttype='fft', iscale = 'lin', patch_size=10, nharmonics=20, interval=30, tuning_freq=440,nprocs=2,pitch_code='g'): 
+        self.fmin=fmin
+        self.fmax=fmax
+        self.iscale=iscale
+        self.patch_size = patch_size
+        self.nharmonics = nharmonics
+        self.interval = interval
+        self.tuning_freq = tuning_freq
+        self.ttype = ttype
+        #self.pitched = True
+        self.save_mask = save_mask
+        self.pitch_norm = pitch_norm
+        self.timbre_model_path=timbre_model_path
+        self.extra_features = extra_features 
+        self.nsamples = nsamples
+        self.pitch_code = pitch_code
+        #load timbre models or initialize with 1s
+        if self.timbre_model_path is not None:
+            self.harmonics = util.loadObj(self.timbre_model_path)
+        else: 
+            self.harmonics = np.ones((nsources,127,self.nharmonics))
+        super(LargeDatasetPitch2, self).__init__(path_transform_in=path_transform_in, path_transform_out=path_transform_out, sampleRate=sampleRate, exclude_list=exclude_list, nsamples=nsamples,
+            batch_size=batch_size, batch_memory=batch_memory, time_context=time_context, overlap=overlap, extra_features=extra_features, tensortype=tensortype, scratch_path=scratch_path, nsources=nsources,
+            log_in=log_in, log_out=log_out, mult_factor_in=mult_factor_in, mult_factor_out=mult_factor_out,pitched=pitched,save_mask=save_mask,pitch_norm=pitch_norm,nprocs=nprocs)    
+
+    def filterSpec(self,mag,pitches):
+        filtered = np.ones((self.ninst,mag.shape[0],mag.shape[1])) * 1e-18
+        for j in range(self.ninst): #for all the inputed instrument pitches
+            for p in range(len(pitches[j])): #for each pitch contour
+                for t in range(len(pitches[j,p])):
+                    if pitches[j,p,t] > 0:
+                        slices_y = util.slicefft_slices(pitches[j,p,t],size=(mag.shape[-1]-1)*2,interval=self.interval,tuning_freq=self.tuning_freq,nharmonics=self.nharmonics,fmin=self.fmin,fmax=self.fmax,iscale=self.iscale,sampleRate=self.sampleRate)
+                        for k in range(len(slices_y)):
+                            filtered[j,t,slices_y[k]] = filtered[j,t,slices_y[k]] + self.harmonics[j,int(pitches[j,p,t]),k]
+                        slices_y = None
+        #filtered[filtered < 0.001] = 0.001
+        mask = np.zeros((mag.shape[0],self.ninst*mag.shape[1]))
+        for j in range(self.ninst): #for all the inputed instrument pitches
+            #mask[:,j*mag.shape[1]:(j+1)*mag.shape[1]] = filtered[j,:,:] 
+            mask[:,j*mag.shape[1]:(j+1)*mag.shape[1]] = filtered[j,:,:] / np.max(filtered[j,:,:])
+        filtered = None
+
+        # import matplotlib.pyplot as plt
+        # for j in range(self.ninst):
+        #     plt.subplot(211)
+        #     plt.imshow(mag,interpolation='none')
+        #     plt.subplot(212)
+        #     plt.imshow(mask[:,j*mag.shape[1]:(j+1)*mag.shape[1]],interpolation='none')
+        #     plt.show()
+        #import pdb;pdb.set_trace()
+        j=None
+        p=None
+        t=None
+        k=None
+        return mask
+
+
+
+class LargeDatasetPitch3(LargeDataset):
+    def __init__(self, path_transform_in=None, path_transform_out=None, sampleRate=44100, exclude_list=[],nsamples=0,
+        batch_size=64, batch_memory=1000, time_context=-1, overlap=5, extra_features=False, tensortype=float, scratch_path=None, timbre_model_path=None,
+        log_in=False, log_out=False, mult_factor_in=1., mult_factor_out=1., pitched=True,save_mask=False,pitch_norm=120.,nsources=2,
+        fmin=25, fmax=18000, ttype='fft', iscale = 'lin', patch_size=10, nharmonics=20, interval=30, tuning_freq=440,nprocs=2,pitch_code='g'): 
+        self.fmin=fmin
+        self.fmax=fmax
+        self.iscale=iscale
+        self.patch_size = patch_size
+        self.nharmonics = nharmonics
+        self.interval = interval
+        self.tuning_freq = tuning_freq
+        self.ttype = ttype
+        #self.pitched = True
+        self.save_mask = save_mask
+        self.pitch_norm = pitch_norm
+        self.extra_features = extra_features 
+        self.timbre_model_path=timbre_model_path
+        self.nsamples = nsamples
+        self.pitch_code = pitch_code
+        #load timbre models or initialize with 1s
+        if self.timbre_model_path is not None:
+            self.harmonics = util.loadObj(self.timbre_model_path)
+        else: 
+            self.harmonics = np.ones((nsources,127,self.nharmonics))
+        super(LargeDatasetPitch3, self).__init__(path_transform_in=path_transform_in, path_transform_out=path_transform_out, sampleRate=sampleRate, exclude_list=exclude_list, nsamples=nsamples,
+            batch_size=batch_size, batch_memory=batch_memory, time_context=time_context, overlap=overlap, extra_features=extra_features, tensortype=tensortype, scratch_path=scratch_path, nsources=nsources,
+            log_in=log_in, log_out=log_out, mult_factor_in=mult_factor_in, mult_factor_out=mult_factor_out,pitched=pitched,save_mask=save_mask,pitch_norm=pitch_norm,nprocs=nprocs)    
+
+    def filterSpec(self,mag,pitches):
+        filtered = np.ones((self.ninst,mag.shape[0],mag.shape[1])) * 0.001
+        for j in range(self.ninst): #for all the inputed instrument pitches
+            for p in range(len(pitches[j])): #for each pitch contour
+                for t in range(len(pitches[j,p])):
+                    if pitches[j,p,t] > 0:
+                        slices_y = util.slicefft_slices(pitches[j,p,t],size=(mag.shape[-1]-1)*2,interval=self.interval,tuning_freq=self.tuning_freq,nharmonics=self.nharmonics,fmin=self.fmin,fmax=self.fmax,iscale=self.iscale,sampleRate=self.sampleRate)
+                        for k in range(len(slices_y)):
+                            filtered[j,t,slices_y[k]] = filtered[j,t,slices_y[k]] + self.harmonics[j,int(pitches[j,p,t]),k]
+                        slices_y = None
+        filtered[filtered < 0.001] = 0.001
+        
+        mask = np.zeros((mag.shape[0],self.ninst*mag.shape[1]))
+        for j in range(self.ninst): #for all the inputed instrument pitches
+            mask[:,j*mag.shape[1]:(j+1)*mag.shape[1]] = filtered[j,:,:] / np.sum(filtered,axis=0) 
+        filtered = None
+
+        # import matplotlib.pyplot as plt
+        # for j in range(self.ninst):
+        #     plt.subplot(211)
+        #     plt.imshow(mag,interpolation='nearest')
+        #     plt.subplot(212)
+        #     plt.imshow(mask[:,j*mag.shape[1]:(j+1)*mag.shape[1]],interpolation='nearest')
+        #     plt.show()
+        #import pdb;pdb.set_trace()
+        j=None
+        p=None
+        t=None
+        k=None
+        return mask
+
