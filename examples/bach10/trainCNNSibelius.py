@@ -474,6 +474,8 @@ if __name__ == "__main__":
         style = ['gt']
     else:
         style = ['original']
+    model = model + '_' + style[0]
+    
     path_in = []
     testfile_list = []
 

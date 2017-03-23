@@ -483,6 +483,8 @@ if __name__ == "__main__":
         style = ['original']
     else:
         style = ['gt']
+    model = model + '_' + style[0]
+    
     path_in = []
     testfile_list = []
 
