@@ -125,5 +125,5 @@ if __name__ == "__main__":
                             segment = None
                             sounds = None
 
-                        tt.compute_transform(audio,os.path.join(feature_path,style[s],f+'.data'),phase=False)
+                        tt.compute_transform(audio,os.path.join(feature_path,style[s],f+'_'+str(c).encode('base64','strict')+'.data'),phase=False)
                     

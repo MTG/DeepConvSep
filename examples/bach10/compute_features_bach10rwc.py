@@ -137,8 +137,8 @@ class Engine(object):
                 segment = None
 
             audio[:,0] = np.sum(audio[:,1:len(self.sources)+1],axis=1)
-                
-            tt.compute_transform(audio,os.path.join(feature_path,f,self.style[s],f+'_'+str(c)+'_'+str(chnk)+'.data'),phase=False)
+
+            tt.compute_transform(audio,os.path.join(feature_path,f,self.style[s],f+'_'+str(c).encode('base64','strict')+'_'+str(chnk)+'.data'),phase=False)
            
             audio = None
             melody= None
