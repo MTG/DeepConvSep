@@ -306,7 +306,7 @@ def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 
                 audio_out=audio_out[:len(audioObj)]
             maxn = np.iinfo(np.int16).max  
             path, filename = os.path.split(filein)  
-            scipy.io.wavfile.write(filename=os.path.join(outdir,filename.replace(".wav","_"+source[i]+".wav")), rate=sampleRate, data=(audio_out*maxn).astype('int16'))
+            scipy.io.wavfile.write(filename=os.path.join(outdir,source[i]+".wav"), rate=sampleRate, data=(audio_out*maxn).astype('int16'))
             audio_out=None 
         audioObj = None
     else:

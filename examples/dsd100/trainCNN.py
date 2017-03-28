@@ -321,14 +321,16 @@ def train_auto(train,fun,transform,testdir,outdir,num_epochs=30,model="1.pkl",sc
 
                 #write audio files
                 if f in dev_directory:
-                    dirout=os.path.join(outdir,f,"Dev")
+                    dirout=os.path.join(outdir,"Dev",f)
                 else:
-                    dirout=os.path.join(outdir,f,"Test")
+                    dirout=os.path.join(outdir,"Test",f)
+                if not os.path.exists(dirout):
+                    os.makedirs(dirout)
                 for i in range(mm.shape[0]):
                     audio_out=transform.compute_inverse(mm[i,:len(ph)]/scale_factor,ph)
                     if len(audio_out)>len(audio):
                         audio_out=audio_out[:len(audio)]
-                    util.writeAudioScipy(os.path.join(dirout,source[i]),audio_out,sampleRate,bitrate)
+                    util.writeAudioScipy(os.path.join(dirout,source[i]+'.wav'),audio_out,sampleRate,bitrate)
                     audio_out=None 
                 audio = None
 
