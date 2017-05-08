@@ -17,7 +17,7 @@
 #printf "Calling Matlab now\n"
 #printf "---------------------------\n"
 echo ${SGE_TASK_ID}
-/soft/MATLAB/R2013b/bin/matlab -nodisplay -nosplash -nodesktop  -singleCompThread -r "DSD100_eval_only('/homedtic/gerruz/data/DSD100/','/homedtic/gerruz/data/output100/',$SGE_TASK_ID);"
+/soft/MATLAB/R2013b/bin/matlab -nodisplay -nosplash -nodesktop  -singleCompThread -r "DSD100_eval_only('your_DSD100_path','your_output_path',$SGE_TASK_ID);"
 # Copy data back, if any
 #printf "---------------------------\n"
 #printf "Matlab processing done.\n"
