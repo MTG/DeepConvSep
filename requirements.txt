@@ -1,4 +1,4 @@
 Theano==0.9.0
--e git@github.com:Lasagne/Lasagne.git
+git+git://github.com/Lasagne/Lasagne.git
 climate
 cPickle
