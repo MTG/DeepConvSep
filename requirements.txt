@@ -1,4 +1,3 @@
 Theano==0.9.0
 git+git://github.com/Lasagne/Lasagne.git
 climate
-pickle
