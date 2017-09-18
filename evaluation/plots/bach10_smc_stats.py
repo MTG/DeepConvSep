@@ -9,8 +9,9 @@ from os import listdir
 from os.path import isfile, join
 import pandas as pd
 import numpy as np
-from scipy import stats  
+from scipy import stats
 from scipy import io
+import climate
 
 if __name__=='__main__':
     if len(sys.argv)>-1:
@@ -20,40 +21,40 @@ if __name__=='__main__':
         if kwargs.__getattribute__('db'):
             db = kwargs.__getattribute__('db')
         else:
-            db='/home/marius/Documents/Database/Bach10/results_paper/'
+            db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/results_paper/'
 
         methods = []
         for d in sorted(os.listdir(db)):
             if not os.path.isfile(os.path.join(db, d)):
                 methods.append(d)
-                
-        sns.set()  
+
+        sns.set()
         sns.set_context("notebook", font_scale=1.4)
         sns.set_palette(sns.cubehelix_palette(8, start=.5, rot=-.75))
 
-        mixSDR=[[],[],[],[],[]] 
+        mixSDR=[[],[],[],[],[]]
         for i in range(len(methods)):
             k=0
             for f in sorted(os.listdir(os.path.join(db, methods[i]))):
                 if f.endswith(".mat"):
                     if os.path.isfile(os.path.join(db, methods[i],f)):
-                        mat = io.loadmat(os.path.join(db, methods[i],f)) 
-                        #import pdb;pdb.set_trace()  
+                        mat = io.loadmat(os.path.join(db, methods[i],f))
+                        import pdb;pdb.set_trace()
                         for j in range(4):
                             mixSDR[0].append(mat['results'][0][0][j+1][0][0][0][0][0])
                             mixSDR[1].append(0)
 
                             mixSDR[0].append(mat['results'][0][0][j+1][0][0][1][0][0])
-                            mixSDR[1].append(1)                       
+                            mixSDR[1].append(1)
 
                             mixSDR[0].append(mat['results'][0][0][j+1][0][0][2][0][0])
                             mixSDR[1].append(2)
 
                             for kk in range(3):
                                 mixSDR[2].append(i)
-                                mixSDR[3].append(j)     
-                                mixSDR[4].append(k)  
-                            k=k+1          
+                                mixSDR[3].append(j)
+                                mixSDR[4].append(k)
+                            k=k+1
                     else:
                         print 'mat file could not be found: '+f
 
@@ -66,7 +67,7 @@ if __name__=='__main__':
 
         ax = sns.barplot(data=df1,x='measure',y='dB',hue='approach')
         sns.plt.show()
-        
+
         df3=df1[df1['measure']=='SDR']
         ax = sns.barplot(data=df3,x='source',y='dB',hue='approach')
         sns.plt.show()
