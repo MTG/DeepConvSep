@@ -13,7 +13,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+    You should have received a copy of the Affero GPL License
     along with DeepConvSep.  If not, see <http://www.gnu.org/licenses/>.
  """
 
@@ -35,15 +35,15 @@ from util import *
 def sinebell(lengthWindow):
     """
     window = sinebell(lengthWindow)
-    
+
     Computes a \"sinebell\" window function of length L=lengthWindow
-    
+
     The formula is:
 
     .. math::
-    
+
         window(t) = sin(\pi \\frac{t}{L}), t=0..L-1
-        
+
     """
     window = np.sin((np.pi*(np.arange(lengthWindow)))/(1.0*lengthWindow))
     return window
@@ -63,7 +63,7 @@ class Transforms(object):
         The sample rate at which to read the signals
     window : function, optional
         The window function for the analysis
-    
+
     """
     def __init__(self, ttype='fft', bins=48, frameSize=1024, hopSize=256, tffmin=25, tffmax=18000, iscale = 'lin', suffix='', sampleRate=44100, window=np.hanning):
         self.bins = bins
@@ -83,7 +83,7 @@ class Transforms(object):
             The audio signal \"audio\" is a numpy array with the shape (t,i) - t is time and i is the id of signal
             Depending on the variable \"save\", it can save the features to a binary file, accompanied by a shape file,
             which is useful for loading the binary data afterwards
-        
+
         Parameters
         ----------
         audio : 2D numpy array
@@ -93,7 +93,7 @@ class Transforms(object):
         save : bool, optional
             To return or to save in the out_path the computed features
         phase : bool, optional
-            To return/save the phase 
+            To return/save the phase
         Yields
         ------
         mag : 3D numpy array
@@ -112,7 +112,7 @@ class Transforms(object):
                 if phase:
                     if len(ph.shape)==3:
                         phs = np.zeros((audio.shape[1],ph.shape[0],ph.shape[1],ph.shape[2]))
-                    else: 
+                    else:
                         phs = np.zeros((audio.shape[1],ph.shape[0],ph.shape[1]))
             mags[i]=mag
             if phase:
@@ -132,7 +132,7 @@ class Transforms(object):
 
     def compute_playing(self,audio, out_path):
         """
-        Function to compute playing/not playing labels for the audio files 
+        Function to compute playing/not playing labels for the audio files
 
         Parameters
         ----------
@@ -172,7 +172,7 @@ class Transforms(object):
         f_in = np.fromfile(self.out_path.replace('.data',name+'.data'))
         shape = self.get_shape(self.out_path.replace('.data','.shape'))
         if self.shape == shape:
-            f_in = f_in.reshape(shape)    
+            f_in = f_in.reshape(shape)
             return f_in
         else:
             print 'Shape of loaded array does not match with the original shape of the transform'
@@ -194,14 +194,14 @@ class Transforms(object):
                 shape=tuple(map(int, re.findall(r'(\d+)', line)))
                 return shape
             else:
-                raise IOError('Failed to find shape in file') 
+                raise IOError('Failed to find shape in file')
 
 
 
 class transformFFT(Transforms):
     """
-    A class to help computing the short time Fourier transform (STFT) 
-    
+    A class to help computing the short time Fourier transform (STFT)
+
     Examples
     --------
     ### 1. Computing the STFT of a matrix of signals \"audio\" and writing the STFT data in \"path\" (except the phase)
@@ -215,7 +215,7 @@ class transformFFT(Transforms):
     ### 3. Computing the inverse STFT using the magnitude and phase and returning the audio data
     #we use the tt1 from 2.
     audio = tt1.compute_inverse(mag,phase)
-    
+
     """
 
     def __init__(self, ttype='fft', bins=48, frameSize=1024, hopSize=256, tffmin=25, tffmax=18000, iscale = 'lin', suffix='', sampleRate=44100, window=np.hanning):
@@ -230,7 +230,7 @@ class transformFFT(Transforms):
         audio : 1D numpy array
             The array comprising the audio signals
         phase : bool, optional
-            To return the phase 
+            To return the phase
         sampleRate : int, optional
             The sample rate at which to read the signals
         Yields
@@ -253,7 +253,7 @@ class transformFFT(Transforms):
 
     def compute_inverse(self, mag, phase, sampleRate=44100):
         """
-        Compute the inverse STFT for a given magnitude and phase 
+        Compute the inverse STFT for a given magnitude and phase
 
         Parameters
         ----------
@@ -271,7 +271,7 @@ class transformFFT(Transforms):
         mag = mag  * np.sqrt(self.frameSize) #normalization
         Xback = mag * np.exp(1j*phase)
         data = istft_norm(Xback, window=self.window, analysisWindow=self.window, hopsize=float(self.hopSize), nfft=float(self.frameSize))
-        return data                
+        return data
 
 
 def stft_norm(data, window=sinebell(2048),
@@ -279,9 +279,9 @@ def stft_norm(data, window=sinebell(2048),
     """
     X = stft_norm(data,window=sinebell(2048),hopsize=1024.0,
                    nfft=2048.0,fs=44100)
-                   
+
     Computes the short time Fourier transform (STFT) of data.
-    
+
     Inputs:
         data                  :
             one-dimensional time-series to be analyzed
@@ -294,36 +294,36 @@ def stft_norm(data, window=sinebell(2048),
             (the user has to provide an even number)
         fs=44100.0            :
             sampling rate of the signal
-        
+
     Outputs:
         X                     :
             STFT of data
     """
-    
+
     # window defines the size of the analysis windows
     lengthWindow = window.size
-    
+
     lengthData = data.size
-    
+
     # should be the number of frames by YAAFE:
     numberFrames = int(np.ceil(lengthData / np.double(hopsize)) + 2)
     # to ensure that the data array s big enough,
     # assuming the first frame is centered on first sample:
     newLengthData = int((numberFrames-1) * hopsize + lengthWindow)
-    
+
     # !!! adding zeros to the beginning of data, such that the first window is
     # centered on the first sample of data
     data = np.concatenate((np.zeros(int(lengthWindow/2.0)), data))
-    
+
     # zero-padding data such that it holds an exact number of frames
     data = np.concatenate((data, np.zeros(newLengthData - data.size)))
-    
+
     # the output STFT has nfft/2+1 rows. Note that nfft has to be an even
     # number (and a power of 2 for the fft to be fast)
     numberFrequencies = int(nfft / 2 + 1)
-    
+
     STFT = np.zeros([numberFrequencies, numberFrames], dtype=complex)
-    
+
     # storing FT of each frame in STFT:
     for n in np.arange(numberFrames):
         beginFrame = int(n*hopsize)
@@ -331,7 +331,7 @@ def stft_norm(data, window=sinebell(2048),
         frameToProcess = window*data[beginFrame:endFrame]
         STFT[:,n] = np.fft.rfft(frameToProcess, np.int32(nfft))
         frameToProcess = None
-    
+
     return STFT.T
 
 def istft_norm(X, window=sinebell(2048),
@@ -362,20 +362,20 @@ def istft_norm(X, window=sinebell(2048),
             the first half-window is removed, complying
             with the STFT computation given in the
             function stft
-    
+
     """
     X=X.T
     if analysisWindow is None:
         analysisWindow = window
-    
+
     lengthWindow = np.array(window.size)
     numberFrequencies, numberFrames = X.shape
     lengthData = int(hopsize*(numberFrames-1) + lengthWindow)
-    
+
     normalisationSeq = np.zeros(lengthData)
-    
+
     data = np.zeros(lengthData)
-    
+
     for n in np.arange(numberFrames):
         beginFrame = int(n * hopsize)
         endFrame = beginFrame + lengthWindow
@@ -386,13 +386,13 @@ def istft_norm(X, window=sinebell(2048),
             window * analysisWindow)
         data[beginFrame:endFrame] = (
             data[beginFrame:endFrame] + window * frameTMP)
-    
+
     data = data[int(lengthWindow/2.0):]
     normalisationSeq = normalisationSeq[int(lengthWindow/2.0):]
     normalisationSeq[normalisationSeq==0] = 1.
- 
+
     data = data / normalisationSeq
-    
+
     return data
 
 

@@ -13,7 +13,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+    You should have received a copy of the Affero GPL License
     along with DeepConvSep.  If not, see <http://www.gnu.org/licenses/>.
  """
 
@@ -66,15 +66,15 @@ def save_model(filename, model):
 def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=513):
     """
     Builds a network with lasagne
-    
+
     Parameters
     ----------
     input_var : Theano tensor
         The input for the network
     batch_size : int, optional
-        The number of examples in a batch   
+        The number of examples in a batch
     time_context : int, optional
-        The time context modeled by the network. 
+        The time context modeled by the network.
     feat_size : int, optional
         The feature size modeled by the network (last dimension of the feature vector)
     Yields
@@ -95,12 +95,12 @@ def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=513):
     l_conv2b= lasagne.layers.BiasLayer(l_conv2)
 
     l_fc=lasagne.layers.DenseLayer(l_conv2b,256)
-   
+
     l_fc11=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
     l_reshape1 = lasagne.layers.ReshapeLayer(l_fc11,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse11=lasagne.layers.InverseLayer(l_reshape1, l_conv2)
     l_inverse41=lasagne.layers.InverseLayer(l_inverse11, l_conv1)
-  
+
     l_fc12=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
     l_reshape2 = lasagne.layers.ReshapeLayer(l_fc12,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse12=lasagne.layers.InverseLayer(l_reshape2, l_conv2)
@@ -119,7 +119,7 @@ def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=513):
     l_merge=lasagne.layers.ConcatLayer([l_inverse41,l_inverse42,l_inverse43,l_inverse44],axis=1)
 
     l_out = lasagne.layers.NonlinearityLayer(lasagne.layers.BiasLayer(l_merge), nonlinearity=lasagne.nonlinearities.rectify)
-  
+
     return l_out
 
 
@@ -133,7 +133,7 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
     train : Callable, e.g. LargeDataset object
         The callable which generates training data for the network: inputs, target = train()
     fun : lasagne network object, Theano tensor
-        The network to be trained  
+        The network to be trained
     transform : transformFFT object
         The Transform object which was used to compute the features (see compute_features.py)
     testdir : string, optional
@@ -143,7 +143,7 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
     num_epochs : int, optional
         The number the epochs to train for (one epoch is when all examples in the dataset are seen by the network)
     model : string, optional
-        The path where to save the trained model (theano tensor containing the network) 
+        The path where to save the trained model (theano tensor containing the network)
     scale_factor : float, optional
         Scale the magnitude of the files to be separated with this factor
     Yields
@@ -156,12 +156,12 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
     input_var2 = T.tensor4('inputs')
     target_var2 = T.tensor4('targets')
     rand_num = T.tensor4('rand_num')
-    
+
     eps=1e-18
     alpha=0.001
 
     network2 = fun(input_var=input_var2,batch_size=train.batch_size,time_context=train.time_context,feat_size=train.input_size)
-    
+
     if load:
         params=load_model(model)
         lasagne.layers.set_all_param_values(network2,params)
@@ -186,16 +186,16 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
     source4=mask4*input_var2[:,0:1,:,:]
 
     train_loss_recon1 = lasagne.objectives.squared_error(source1,target_var2[:,0:1,:,:])
-    train_loss_recon2 = lasagne.objectives.squared_error(source2,target_var2[:,1:2,:,:]) 
+    train_loss_recon2 = lasagne.objectives.squared_error(source2,target_var2[:,1:2,:,:])
     train_loss_recon3 = lasagne.objectives.squared_error(source3,target_var2[:,2:3,:,:])
-    train_loss_recon4 = lasagne.objectives.squared_error(source4,target_var2[:,3:4,:,:])      
+    train_loss_recon4 = lasagne.objectives.squared_error(source4,target_var2[:,3:4,:,:])
 
-    error1=train_loss_recon1.sum()  
-    error2=train_loss_recon2.sum()  
-    error3=train_loss_recon3.sum()  
+    error1=train_loss_recon1.sum()
+    error2=train_loss_recon2.sum()
+    error3=train_loss_recon3.sum()
     error4=train_loss_recon4.sum()
 
-    loss=abs(error1+error2+error3+error4) 
+    loss=abs(error1+error2+error3+error4)
 
     params1 = lasagne.layers.get_all_params(network2, trainable=True)
 
@@ -217,24 +217,24 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
             train_err = 0
             train_batches = 0
             err1=0
-            err2=0     
+            err2=0
             err3=0
             err4=0
             start_time = time.time()
-            for batch in range(train.iteration_size): 
+            for batch in range(train.iteration_size):
                 inputs, target = train()
-                
+
                 jump = inputs.shape[2]
                 targets=np.ndarray(shape=(inputs.shape[0],4,inputs.shape[1],inputs.shape[2]))
-                inputs=np.reshape(inputs,(inputs.shape[0],1,inputs.shape[1],inputs.shape[2]))          
-            
+                inputs=np.reshape(inputs,(inputs.shape[0],1,inputs.shape[1],inputs.shape[2]))
+
                 targets[:,0,:,:]=target[:,:,:jump]
-                targets[:,1,:,:]=target[:,:,jump:jump*2]  
-                targets[:,2,:,:]=target[:,:,jump*2:jump*3] 
-                targets[:,3,:,:]=target[:,:,jump*3:jump*4]        
+                targets[:,1,:,:]=target[:,:,jump:jump*2]
+                targets[:,2,:,:]=target[:,:,jump*2:jump*3]
+                targets[:,3,:,:]=target[:,:,jump*3:jump*4]
                 target=None
                 #gc.collect()
-         
+
                 train_err+=train_fn(inputs,targets)
                 [e1,e2,e3,e4]=train_fn1(inputs,targets)
                 err1 += e1
@@ -242,7 +242,7 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
                 err3 += e3
                 err4 += e4
                 train_batches += 1
-            
+
             logging.info("Epoch {} of {} took {:.3f}s".format(
                 epoch + 1, num_epochs, time.time() - start_time))
             logging.info("  training loss:\t\t{:.6f}".format(train_err/train_batches))
@@ -263,7 +263,7 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
             for i in range(len(sources)):
                 filename=os.path.join(testdir,f,f+'-'+sources[i]+'.wav')
                 audioObj, sampleRate, bitrate = util.readAudioScipy(filename)
-                
+
                 assert sampleRate == 44100,"Sample rate needs to be 44100"
 
                 nframes = int(np.ceil(len(audioObj) / np.double(tt.hopSize))) + 2
@@ -271,8 +271,8 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
                     audio = np.zeros(audioObj.shape[0])
                     #melody = np.zeros((len(sources),1,nframes))
                 audio = audio + audioObj
-                audioObj=None 
-                
+                audioObj=None
+
             mag,ph=transform.compute_file(audio,phase=True)
             mag=scale_factor*mag.astype(np.float32)
 
@@ -293,8 +293,8 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
                 if len(audio_out)>len(audio):
                     audio_out=audio_out[:len(audio)]
                 util.writeAudioScipy(os.path.join(outdir,f+'-'+sources[i]+'.wav'),audio_out,sampleRate,bitrate)
-                audio_out=None 
-        
+                audio_out=None
+
         style = ['fast','slow','original']
         if not os.path.exists(outdir1):
             os.makedirs(outdir1)
@@ -302,19 +302,19 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
             for f in testfile_list1:
                 for i in range(len(sources)):
                     filename=os.path.join(testdir1,f,f+'_'+s+'_'+sources_midi[i]+'.wav')
-                    
+
                     audioObj, sampleRate, bitrate = util.readAudioScipy(filename)
-                    
+
                     assert sampleRate == 44100,"Sample rate needs to be 44100"
 
                     nframes = int(np.ceil(len(audioObj) / np.double(tt.hopSize))) + 2
-                   
+
                     if i==0:
                         audio = np.zeros(audioObj.shape[0])
                         #melody = np.zeros((len(sources),1,nframes))
                     audio = audio + audioObj
-                    audioObj=None 
-                    
+                    audioObj=None
+
                 mag,ph=transform.compute_file(audio,phase=True)
                 mag=scale_factor*mag.astype(np.float32)
 
@@ -335,41 +335,41 @@ def train_auto(train,fun,transform,testdir,outdir,testfile_list,testdir1,outdir1
                         audio_out=audio_out[:len(audio)]
                     filename=os.path.join(outdir1,f+'_'+s+'_'+sources_midi[i]+'.wav')
                     util.writeAudioScipy(filename,audio_out,sampleRate,bitrate)
-                    audio_out=None 
+                    audio_out=None
 
-    return losser  
-
-
+    return losser
 
 
-if __name__ == "__main__": 
+
+
+if __name__ == "__main__":
     """
     Separating Bach10 chorales using the synthesized version with Sibelius
     http://music.cs.northwestern.edu/data/Bach10.html
 
     More details in the following article:
     Marius Miron, Jordi Janer, Emilia Gomez, "Generating data to train convolutional neural networks for low latency classical music source separation", Sound and Music Computing Conference 2017 (submitted)
-    
+
     Given the features computed previusly with compute_features_bach10sibelius, train a network and perform the separation.
-    
+
     Parameters
     ----------
     db : string
-        The path to the Bach10 dataset  
+        The path to the Bach10 dataset
     dbs : string
-        The path to the Bach10 Sibelius dataset  
+        The path to the Bach10 Sibelius dataset
     feature_path : string
-        The path where to load the features from 
+        The path where to load the features from
     output : string
-        The path where to save the output 
+        The path where to save the output
     nepochs : int, optional
         The number the epochs to train for (one epoch is when all examples in the dataset are seen by the network)
     model : string, optional
-        The name of the trained model 
+        The name of the trained model
     scale_factor : float, optional
         Scale the magnitude of the files to be separated with this factor
     batch_size : int, optional
-        The number of examples in a batch (see LargeDataset in dataset.py)  
+        The number of examples in a batch (see LargeDataset in dataset.py)
     batch_memory : int, optional
         The number of batches to load in memory at once (see LargeDataset in dataset.py)
     time_context : int, optional
@@ -402,71 +402,71 @@ if __name__ == "__main__":
             db = kwargs.__getattribute__('db')
         else:
             db='/home/marius/Documents/Database/Bach10/Sources/'
-            # db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Sources/'  
+            # db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Sources/'
         if kwargs.__getattribute__('dbs'):
             dbs = kwargs.__getattribute__('dbs')
         else:
             dbs='/home/marius/Documents/Database/Bach10/Source separation/'
-            # dbs='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Source separation/'    
+            # dbs='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Source separation/'
         if kwargs.__getattribute__('output'):
             output = kwargs.__getattribute__('output')
         else:
             output='/home/marius/Documents/Database/Bach10/'
-            # output='/Volumes/Macintosh HD 2/Documents/Database/Bach10/'  
+            # output='/Volumes/Macintosh HD 2/Documents/Database/Bach10/'
         if kwargs.__getattribute__('feature_path'):
             feature_path = kwargs.__getattribute__('feature_path')
         else:
-            feature_path=os.path.join(dbs,'transforms','t3_synth_aug_more') 
+            feature_path=os.path.join(dbs,'transforms','t3_synth_aug_more')
         assert os.path.isdir(db), "Please input the directory for the Bach10 dataset with --db path_to_Bach10"
-        assert os.path.isdir(dbs), "Please input the directory for the Bach10 Sibelius dataset with --dbs path_to_Bach10Sibelius"    
-        assert os.path.isdir(feature_path), "Please input the directory where you stored the training features --feature_path path_to_features"  
-        assert os.path.isdir(output), "Please input the output directory --output path_to_output"  
+        assert os.path.isdir(dbs), "Please input the directory for the Bach10 Sibelius dataset with --dbs path_to_Bach10Sibelius"
+        assert os.path.isdir(feature_path), "Please input the directory where you stored the training features --feature_path path_to_features"
+        assert os.path.isdir(output), "Please input the output directory --output path_to_output"
         if kwargs.__getattribute__('model'):
             model = kwargs.__getattribute__('model')
         else:
-            model="CNNsibelius"    
+            model="CNNsibelius"
         if kwargs.__getattribute__('batch_size'):
-            batch_size = int(kwargs.__getattribute__('batch_size')) 
+            batch_size = int(kwargs.__getattribute__('batch_size'))
         else:
             batch_size = 32
         if kwargs.__getattribute__('batch_memory'):
-            batch_memory = int(kwargs.__getattribute__('batch_memory')) 
+            batch_memory = int(kwargs.__getattribute__('batch_memory'))
         else:
             batch_memory = 200
         if kwargs.__getattribute__('time_context'):
-            time_context = int(kwargs.__getattribute__('time_context')) 
+            time_context = int(kwargs.__getattribute__('time_context'))
         else:
             time_context = 30
         if kwargs.__getattribute__('overlap'):
-            overlap = int(kwargs.__getattribute__('overlap')) 
+            overlap = int(kwargs.__getattribute__('overlap'))
         else:
             overlap = 25
         if kwargs.__getattribute__('nprocs'):
-            nprocs = int(kwargs.__getattribute__('nprocs')) 
+            nprocs = int(kwargs.__getattribute__('nprocs'))
         else:
             nprocs = multiprocessing.cpu_count()-1
         if kwargs.__getattribute__('nepochs'):
-            nepochs = int(kwargs.__getattribute__('nepochs')) 
+            nepochs = int(kwargs.__getattribute__('nepochs'))
         else:
             nepochs = 40
         if kwargs.__getattribute__('scale_factor'):
-            scale_factor = int(kwargs.__getattribute__('scale_factor')) 
+            scale_factor = int(kwargs.__getattribute__('scale_factor'))
         else:
             scale_factor = 0.3
         if kwargs.__getattribute__('scale_factor_test'):
-            scale_factor_test = int(kwargs.__getattribute__('scale_factor_test')) 
+            scale_factor_test = int(kwargs.__getattribute__('scale_factor_test'))
         else:
             scale_factor_test = 0.2
         if kwargs.__getattribute__('gt'):
-            gt = int(kwargs.__getattribute__('gt')) 
+            gt = int(kwargs.__getattribute__('gt'))
         else:
             gt = True
         if kwargs.__getattribute__('load'):
-            load = int(kwargs.__getattribute__('load')) 
+            load = int(kwargs.__getattribute__('load'))
         else:
             load = False
         if kwargs.__getattribute__('skip'):
-            skip = int(kwargs.__getattribute__('skip')) 
+            skip = int(kwargs.__getattribute__('skip'))
         else:
             skip = False
 
@@ -475,13 +475,13 @@ if __name__ == "__main__":
     else:
         style = ['original']
     model = model + '_' + style[0]
-    
+
     path_in = []
     testfile_list = []
 
     for f in sorted(os.listdir(db)):
         if os.path.isdir(os.path.join(db,f)) and f[0].isdigit():
-            testfile_list.append(f)  
+            testfile_list.append(f)
 
     for s in style:
         if os.path.exists(os.path.join(feature_path,s)):
@@ -495,7 +495,7 @@ if __name__ == "__main__":
     logging.info("  Mean:\t\t{:.6f}".format(ld1.getMean()))
     logging.info("  Standard dev:\t\t{:.6f}".format(ld1.getStd()))
 
-    
+
     if not os.path.exists(os.path.join(output,'output',model)):
         os.makedirs(os.path.join(output,'output',model))
     if not os.path.exists(os.path.join(output,'models')):
@@ -505,7 +505,7 @@ if __name__ == "__main__":
 
     train_errs=train_auto(train=ld1,fun=build_ca,transform=tt,outdir=os.path.join(output,'output',model),testdir=db,testfile_list=testfile_list,\
         outdir1=os.path.join(output,'output',model+"_original"),testdir1=dbs,testfile_list1=testfile_list,
-        model=os.path.join(output,"models","model_"+model+".pkl"),num_epochs=nepochs,scale_factor=scale_factor_test,load=load,skip_train=skip)  
+        model=os.path.join(output,"models","model_"+model+".pkl"),num_epochs=nepochs,scale_factor=scale_factor_test,load=load,skip_train=skip)
     f = file(os.path.join(output,"models","loss_"+model+".data"), 'wb')
     cPickle.dump(train_errs,f,protocol=cPickle.HIGHEST_PROTOCOL)
     f.close()

@@ -37,20 +37,37 @@ if __name__ == "__main__":
         db = kwargs.__getattribute__('db')
     else:
         db='/home/marius/Documents/Database/Bach10/Sources/'
-        # db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Sources/'
+        db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Sources/'
     if kwargs.__getattribute__('feature_path'):
         feature_path = kwargs.__getattribute__('feature_path')
     else:
         feature_path=os.path.join(db,'transforms','t3')
     assert os.path.isdir(db), "Please input the directory for the Bach10 dataset with --db path_to_Bach10"
 
+    nharmonics=20
+    interval=50 #cents
+    tuning_freq=440 #Hz
     sources = ['bassoon','clarinet','saxphone','violin']
     sources_midi = ['bassoon','clarinet','saxophone','violin']
+
+    if not os.path.exists(feature_path):
+        os.makedirs(feature_path)
 
     #compute transform
     for f in os.listdir(db):
         if os.path.isdir(os.path.join(db,f)) and f[0].isdigit() :
             if not f.startswith('.'):
+                nelem_g=1
+                nelem_b=1
+                for i in range(len(sources)):
+                    ng = util.getMidiNum(sources_midi[i]+'_g',os.path.join(db,f),0,40.0)
+                    nelem_g = np.maximum(ng,nelem_g)
+                    nb = util.getMidiNum(sources_midi[i]+'_b',os.path.join(db,f),0,40.0)
+                    nelem_b = np.maximum(nb,nelem_b)
+                melody_g = np.zeros((len(sources),int(nelem_g),2*nharmonics+3))
+                melody_b = np.zeros((len(sources),int(nelem_b),2*nharmonics+3))
+                melody_e = np.zeros((len(sources),int(nelem_b),2*nharmonics+3))
+
                 for i in range(len(sources)):
                     #read the audio file
                     audioObj, sampleRate, bitrate = util.readAudioScipy(os.path.join(db,f,f+'-'+sources[i]+'.wav'))
@@ -59,11 +76,25 @@ if __name__ == "__main__":
                         tt=transformFFT(frameSize=4096, hopSize=512, sampleRate=44100, window=blackmanharris)
                         nframes = int(len(audioObj)/tt.hopSize)
                         audio = np.zeros((audioObj.shape[0],len(sources)+1))
+
                     audio[:,0] = audio[:,0] + audioObj
                     audio[:,i+1] = audioObj
                     audioObj=None
 
-                if not os.path.exists(feature_path):
-                    os.makedirs(feature_path)
+                    tmp = util.expandMidi(sources_midi[i]+'_g',os.path.join(db,f),0,40.0,interval,tuning_freq,nharmonics,sampleRate,tt.hopSize,tt.frameSize,0.,0.,nframes)
+                    melody_g[i,:tmp.shape[0],:] = tmp
+                    tmp = None
+                    tmp = util.expandMidi(sources_midi[i]+'_b',os.path.join(db,f),0,40.0,interval,tuning_freq,nharmonics,sampleRate,tt.hopSize,tt.frameSize,0.,0.,nframes,fermata=0.5)
+                    melody_b[i,:tmp.shape[0],:] = tmp
+                    tmp = None
+                    tmp = util.expandMidi(sources_midi[i]+'_b',os.path.join(db,f),0,40.0,interval,tuning_freq,nharmonics,sampleRate,tt.hopSize,tt.frameSize,0.2,0.2,nframes,fermata=0.5)
+                    melody_e[i,:tmp.shape[0],:] = tmp
+                    tmp = None
+
+                #masks_temp = testfilterSpec(audio,tt,melody_b,0,nframes)
+
                 tt.compute_transform(audio,os.path.join(feature_path,f+'.data'),phase=False)
+                tt.saveTensor(melody_g, '_'+tt.suffix+'_g_')
+                tt.saveTensor(melody_b, '_'+tt.suffix+'_b_')
+                tt.saveTensor(melody_e, '_'+tt.suffix+'_e_')
 

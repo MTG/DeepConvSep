@@ -5,7 +5,7 @@
     Copyright (c) 2017 Gerard Erruz  <gerard.erruz at upf.edu>
 
     DeepConvSep is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
+    it under the terms of the Affero GPL License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -14,7 +14,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
+    You should have received a copy of the Affero GPL License
     along with DeepConvSep.  If not, see <http://www.gnu.org/licenses/>.
  """
 

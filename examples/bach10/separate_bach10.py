@@ -24,8 +24,8 @@ def load_model(filename):
 def compute_file(audio, phase=False, frameSize=1024, hopSize=512, sampleRate=44100, window=np.hanning):
     win = window(frameSize)
     X = stft_norm(audio, window=win, hopsize=float(hopSize), nfft=float(frameSize), fs=float(sampleRate))
-    mag = np.abs(X)  
-    mag = mag  / np.sqrt(frameSize) 
+    mag = np.abs(X)
+    mag = mag  / np.sqrt(frameSize)
     if phase:
         ph = np.angle(X)
         return mag,ph
@@ -35,10 +35,10 @@ def compute_file(audio, phase=False, frameSize=1024, hopSize=512, sampleRate=441
 
 def compute_inverse(mag, phase, frameSize=1024, hopSize=512, sampleRate=44100, window=np.hanning):
     win = window(frameSize)
-    mag = mag  * np.sqrt(frameSize) 
+    mag = mag  * np.sqrt(frameSize)
     Xback = mag * np.exp(1j*phase)
     data = istft_norm(Xback, window=win, analysisWindow=win, hopsize=float(hopSize), nfft=float(frameSize))
-    return data                
+    return data
 
 
 def sinebell(lengthWindow):
@@ -49,20 +49,20 @@ def sinebell(lengthWindow):
 def stft_norm(data, window=sinebell(2048),
          hopsize=512.0, nfft=2048.0, fs=44100.0):
 
-    lengthWindow = window.size   
-    lengthData = data.size    
-  
+    lengthWindow = window.size
+    lengthData = data.size
+
     numberFrames = int(np.ceil(lengthData / np.double(hopsize)) + 2)
     newLengthData = int((numberFrames-1) * hopsize + lengthWindow)
-    
+
     data = np.concatenate((np.zeros(int(lengthWindow/2.0)), data))
-    
+
     data = np.concatenate((data, np.zeros(newLengthData - data.size)))
-    
+
     numberFrequencies = int(nfft / 2 + 1)
-    
+
     STFT = np.zeros([numberFrequencies, numberFrames], dtype=complex)
-    
+
     for n in np.arange(numberFrames):
         beginFrame = int(n*hopsize)
         endFrame = beginFrame+lengthWindow
@@ -71,26 +71,26 @@ def stft_norm(data, window=sinebell(2048),
 
     F = np.arange(numberFrequencies)/np.double(nfft)*fs
     N = np.arange(numberFrames)*hopsize/np.double(fs)
-    
+
     return STFT.T
 
 
 def istft_norm(X, window=sinebell(2048),
           analysisWindow=None,
           hopsize=512.0, nfft=2048.0):
-  
+
     X=X.T
     if analysisWindow is None:
         analysisWindow = window
-    
+
     lengthWindow = np.array(window.size)
     numberFrequencies, numberFrames = X.shape
     lengthData = int(hopsize*(numberFrames-1) + lengthWindow)
-    
+
     normalisationSeq = np.zeros(lengthData)
-    
+
     data = np.zeros(lengthData)
-    
+
     for n in np.arange(numberFrames):
         beginFrame = int(n * hopsize)
         endFrame = beginFrame + lengthWindow
@@ -101,13 +101,13 @@ def istft_norm(X, window=sinebell(2048),
             window * analysisWindow)
         data[beginFrame:endFrame] = (
             data[beginFrame:endFrame] + window * frameTMP)
-    
+
     data = data[int(lengthWindow/2.0):]
     normalisationSeq = normalisationSeq[int(lengthWindow/2.0):]
     normalisationSeq[normalisationSeq==0] = 1.
-  
+
     data = data / normalisationSeq
-    
+
     return data
 
 
@@ -115,23 +115,23 @@ def generate_overlapadd(allmix,input_size=513,time_context=30, overlap=10,batch_
     window = np.linspace(0., 1.0, num=overlap)
     window = np.concatenate((window,window[::-1]))
     window = np.repeat(np.expand_dims(window, axis=1),input_size,axis=1)
-  
+
     if input_size == allmix.shape[-1]:
-        
+
         i=0
-        start=0  
+        start=0
         while (start + time_context) < allmix.shape[0]:
             i = i + 1
-            start = start - overlap + time_context 
+            start = start - overlap + time_context
         fbatch = np.empty([int(np.ceil(float(i)/batch_size)),batch_size,1,time_context,input_size])
 
         i=0
-        start=0  
- 
+        start=0
+
         while (start + time_context) < allmix.shape[0]:
             fbatch[int(i/batch_size),int(i%batch_size),:,:,:]=allmix[start:start+time_context,:]
-            i = i + 1 
-            start = start - overlap + time_context 
+            i = i + 1
+            start = start - overlap + time_context
     return fbatch,i
 
 
@@ -151,10 +151,10 @@ def overlapadd_multi(fbatch,obatch,nchunks,overlap=10):
     #time_context = net.network.find('hid2', 'hh').size
     # input_size = net.layers[0].size  #input_size is the number of spectral bins in the fft
     window = np.repeat(np.expand_dims(window, axis=1),input_size,axis=1)
-    sep = np.zeros((nsources, nchunks*(time_context-overlap)+time_context, input_size)) #allocate for output of prediction 
+    sep = np.zeros((nsources, nchunks*(time_context-overlap)+time_context, input_size)) #allocate for output of prediction
     for s in range(nsources):
         i=0
-        start=0 
+        start=0
         while i < nchunks:
             # import pdb;pdb.set_trace()
             fbatch1=fbatch[:,s,:,:,:]
@@ -172,15 +172,15 @@ def overlapadd_multi(fbatch,obatch,nchunks,overlap=10):
 def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=513):
     """
     Builds a network with lasagne
-    
+
     Parameters
     ----------
     input_var : Theano tensor
         The input for the network
     batch_size : int, optional
-        The number of examples in a batch   
+        The number of examples in a batch
     time_context : int, optional
-        The time context modeled by the network. 
+        The time context modeled by the network.
     feat_size : int, optional
         The feature size modeled by the network (last dimension of the feature vector)
     Yields
@@ -201,12 +201,12 @@ def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=513):
     l_conv2b= lasagne.layers.BiasLayer(l_conv2)
 
     l_fc=lasagne.layers.DenseLayer(l_conv2b,256)
-   
+
     l_fc11=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
     l_reshape1 = lasagne.layers.ReshapeLayer(l_fc11,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse11=lasagne.layers.InverseLayer(l_reshape1, l_conv2)
     l_inverse41=lasagne.layers.InverseLayer(l_inverse11, l_conv1)
-  
+
     l_fc12=lasagne.layers.DenseLayer(l_fc,l_conv2.output_shape[1]*l_conv2.output_shape[2]*l_conv2.output_shape[3])
     l_reshape2 = lasagne.layers.ReshapeLayer(l_fc12,(batch_size,l_conv2.output_shape[1],l_conv2.output_shape[2], l_conv2.output_shape[3]))
     l_inverse12=lasagne.layers.InverseLayer(l_reshape2, l_conv2)
@@ -225,19 +225,19 @@ def build_ca(input_var=None, batch_size=32,time_context=30,feat_size=513):
     l_merge=lasagne.layers.ConcatLayer([l_inverse41,l_inverse42,l_inverse43,l_inverse44],axis=1)
 
     l_out = lasagne.layers.NonlinearityLayer(lasagne.layers.BiasLayer(l_merge), nonlinearity=lasagne.nonlinearities.rectify)
-  
+
     return l_out
 
 
-def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 20,batch_size=32,input_size=513):
+def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 20,batch_size=32,input_size=2049, frameSize=4096, hopSize=512):
     input_var2 = T.tensor4('inputs')
     target_var2 = T.tensor4('targets')
     rand_num = T.tensor4('rand_num')
     source = ['bassoon','clarinet','saxphone','violin']
 
     eps=1e-18
-    network2 = build_ca(input_var2,batch_size,time_context,input_size)    
-  
+    network2 = build_ca(input_var2,batch_size,time_context,input_size)
+
     #print("Loading model...")
     params=load_model(model)
     lasagne.layers.set_all_param_values(network2,params)
@@ -263,50 +263,50 @@ def train_auto(filein,outdir,model,scale_factor=0.3,time_context = 30,overlap = 
     source3=mask3*input_var2[:,0:1,:,:]
     source4=mask4*input_var2[:,0:1,:,:]
 
-    predict_function2=theano.function([input_var2],[source1,source2,source3,source4],allow_input_downcast=True) 
- 
-    sampleRate, audioObj = scipy.io.wavfile.read(filein)  
-    
+    predict_function2=theano.function([input_var2],[source1,source2,source3,source4],allow_input_downcast=True)
+
+    sampleRate, audioObj = scipy.io.wavfile.read(filein)
+
     try:
         maxv = np.finfo(audioObj.dtype).max
     except:
         maxv = np.iinfo(audioObj.dtype).max
 
     audioObj = audioObj.astype('float') / maxv
-      
-    if sampleRate == 44100:     
+
+    if sampleRate == 44100:
         if (len(audioObj.shape))>1 and (audioObj.shape[1]>1):
             audioObj[:,0] = (audioObj[:,0] + audioObj[:,1]) / 2
             audioObj = audioObj[:,0]
-   
-        mag,ph=compute_file(audioObj,phase=True)     
+
+        mag,ph=compute_file(audioObj,phase=True, frameSize=frameSize, hopSize=hopSize, sampleRate=44100, window=blackmanharris)
         mag=scale_factor*mag.astype(np.float32)
 
         batches,nchunks = generate_overlapadd(mag,input_size=mag.shape[-1],time_context=time_context,overlap=overlap,batch_size=batch_size,sampleRate=44100)
         output=[]
- 
+
         batch_no=1
         for batch in batches:
-            batch_no+=1           
+            batch_no+=1
             output.append(predict_function2(batch))
 
         output=np.array(output)
         mm = overlapadd_multi(output,batches,nchunks,overlap=overlap)
 
         for i in range(mm.shape[0]):
-            audio_out=compute_inverse(mm[i,:len(ph)]/scale_factor,ph)
+            audio_out=compute_inverse(mm[i,:len(ph)]/scale_factor,ph,frameSize=frameSize, hopSize=hopSize, sampleRate=44100, window=blackmanharris)
             if len(audio_out)>len(audioObj):
                 audio_out=audio_out[:len(audioObj)]
-            maxn = np.iinfo(np.int16).max  
-            path, filename = os.path.split(filein)  
+            maxn = np.iinfo(np.int16).max
+            path, filename = os.path.split(filein)
             scipy.io.wavfile.write(filename=os.path.join(outdir,filename.replace(".wav","_"+source[i]+".wav")), rate=sampleRate, data=(audio_out*maxn).astype('int16'))
-            audio_out=None 
+            audio_out=None
         audioObj = None
     else:
         print "Sample rate is not 44100"
 
 
-def main(argv):  
+def main(argv):
     try:
        opts, args = getopt.getopt(argv,"hi:o:m:",["ifile=","odir=","--mfile"])
     except getopt.GetoptError:
@@ -322,7 +322,7 @@ def main(argv):
           outdir = arg
         elif opt in ("-m", "--mfile"):
           model = arg
-    train_auto(inputfile,outdir,model,0.3,30,25,32,2049)   
+    train_auto(inputfile,outdir,model,0.3,30,25,32,2049,4096,512)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
