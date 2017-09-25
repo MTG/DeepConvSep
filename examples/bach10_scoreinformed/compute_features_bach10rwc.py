@@ -4,7 +4,7 @@
     Copyright (c) 2014-2017 Marius Miron  <miron.marius at gmail.com>
 
     DeepConvSep is free software: you can redistribute it and/or modify
-    it under the terms of the Affero GPL License as published by
+    it under the terms of the Afero GPL License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
@@ -13,9 +13,10 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-    You should have received a copy of the Affero GPL License
+    You should have received a copy of the Afero GPL License
     along with DeepConvSep.  If not, see <http://www.gnu.org/licenses/>.
  """
+
 import os,sys
 import transform
 import util
@@ -33,6 +34,7 @@ from multiprocessing import Pool
 MIDI_A4 = 69   # MIDI Pitch number
 FREQ_A4 = 440. # Hz
 SEMITONE_RATIO = 2. ** (1. / 12.) # Ascending
+
 
 class Engine(object):
     def __init__(self,db,feature_path,instruments,allowed_styles,allowed_dynamics,allowed_case,time_shifts,rwc_path,chunk_size,sample_size,style,style_midi,nharmonics,interval,tuning_freq):
@@ -55,6 +57,7 @@ class Engine(object):
       self.nharmonics = nharmonics
       self.tuning_freq = tuning_freq
       self.interval=interval
+      self.feature_path = feature_path
 
       #time_shifts=[0.]
       intensity_shifts=list(range(len(self.allowed_dynamics)))
@@ -94,12 +97,12 @@ class Engine(object):
       c = np.array(combo)
       chunk_size = self.chunk_size
       db = self.db
+      feature_path = self.feature_path
 
       tt=transformFFT(frameSize=4096, hopSize=512, sampleRate=44100, window=blackmanharris)
-
       maxLength=0
       for i in range(len(self.sources)):
-        instlen = util.getMidiLength(self.sources_midi[i]+'_g'+self.style_midi[s],os.path.join(db,f))
+        instlen = util.getMidiLength(self.sources_midi[i]+'_g'+self.style_midi,db)
         if instlen>maxLength:
           maxLength = instlen
       if chunk_size>maxLength:
@@ -108,11 +111,11 @@ class Engine(object):
       for chnk in range(int(np.floor(maxLength/chunk_size))):
         chunk_start = float(chunk_size * chnk)
         chunk_end = float((chnk+1) * chunk_size)
-        if not os.path.isfile(os.path.join(feature_path,f,self.style[s],f+'_'+str(c)+'_'+str(chnk)+'.data')):
+        if not os.path.isfile(os.path.join(feature_path,self.style,str(c).encode('base64','strict')+'_'+str(chnk)+'.data')):
           try:
             nelem_g=1
             for i in range(len(self.sources)):
-                ng = util.getMidiNum(self.sources_midi[i]+'_g'+self.style_midi[s],os.path.join(db,f),chunk_start,chunk_end)
+                ng = util.getMidiNum(self.sources_midi[i]+'_g'+self.style_midi,db,chunk_start,chunk_end)
                 nelem_g = np.maximum(ng,nelem_g)
             melody_g = np.zeros((len(self.sources),int(nelem_g),2*self.nharmonics+3))
             melody_e = np.zeros((len(self.sources),int(nelem_g),2*self.nharmonics+3))
@@ -127,10 +130,10 @@ class Engine(object):
               if i==0:
                   audio = np.zeros((size,len(self.sources)+1))
 
-              tmp = util.expandMidi(self.sources_midi[i]+'_g'+self.style_midi[s],os.path.join(db,f),chunk_start,chunk_end,self.interval,self.tuning_freq,self.nharmonics,self.sampleRate,tt.hopSize,tt.frameSize,c[i,0],c[i,0],nframes)
+              tmp = util.expandMidi(self.sources_midi[i]+'_g'+self.style_midi,db,chunk_start,chunk_end,self.interval,self.tuning_freq,self.nharmonics,self.sampleRate,tt.hopSize,tt.frameSize,c[i,0],c[i,0],nframes)
               melody_g[i,:tmp.shape[0],:] = tmp
               tmp = None
-              tmp = util.expandMidi(self.sources_midi[i]+'_g'+self.style_midi[s],os.path.join(db,f),chunk_start,chunk_end,self.interval,self.tuning_freq,self.nharmonics,self.sampleRate,tt.hopSize,tt.frameSize,c[i,0]+0.2,c[i,0]+0.2,nframes,fermata=c[i,0]+0.5)
+              tmp = util.expandMidi(self.sources_midi[i]+'_g'+self.style_midi,db,chunk_start,chunk_end,self.interval,self.tuning_freq,self.nharmonics,self.sampleRate,tt.hopSize,tt.frameSize,c[i,0]+0.2,c[i,0]+0.2,nframes,fermata=c[i,0]+0.5)
               melody_e[i,:tmp.shape[0],:] = tmp
               tmp = None
               #generate the audio, note by note
@@ -150,8 +153,7 @@ class Engine(object):
                   segment = None
 
             audio[:,0] = np.sum(audio[:,1:len(self.sources)+1],axis=1)
-
-            tt.compute_transform(audio,os.path.join(feature_path,f,self.style[s],f+'_'+str(c).encode('base64','strict')+'_'+str(chnk)+'.data'),phase=False)
+            tt.compute_transform(audio,os.path.join(feature_path,self.style,str(c).encode('base64','strict')+'_'+str(chnk)+'.data'),phase=False)
             tt.saveTensor(melody_g, '__g_')
             tt.saveTensor(melody_e, '__e_')
             audio = None
@@ -175,15 +177,15 @@ if __name__ == "__main__":
     climate.add_arg('--original', help="compute features for the original score or ground truth aligned score")
     kwargs = climate.parse_args()
     if kwargs.__getattribute__('db'):
-        db = kwargs.__getattribute__('db')
+      db = kwargs.__getattribute__('db')
     else:
-        db='/home/marius/Documents/Database/Bach10/Source separation/'
-        db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Source separation/'
+      db='/home/marius/Documents/Database/Bach10/Source separation/'
+      # db='/Volumes/Macintosh HD 2/Documents/Database/Bach10/Source separation/'
     if kwargs.__getattribute__('rwc'):
-        rwc_path = kwargs.__getattribute__('rwc')
+      rwc_path = kwargs.__getattribute__('rwc')
     else:
-        rwc_path='/home/marius/Documents/Database/RWC/'
-        rwc_path='/Volumes/Macintosh HD 2/Documents/Database/RWC/'
+      rwc_path='/home/marius/Documents/Database/RWC/'
+      # rwc_path='/Volumes/Macintosh HD 2/Documents/Database/RWC/'
     if kwargs.__getattribute__('chunk_size'):
         chunk_size = float(kwargs.__getattribute__('chunk_size'))
     else:
@@ -243,7 +245,7 @@ if __name__ == "__main__":
               if not os.path.exists(os.path.join(feature_path,f,style[s])):
                   os.makedirs(os.path.join(feature_path,f,style[s]))
 
-              engine = Engine(db,feature_path,instruments,allowed_styles,allowed_dynamics,allowed_case,time_shifts,rwc_path,chunk_size,sample_size,style,style_midi,nharmonics,interval,tuning_freq)
+              engine = Engine(os.path.join(db,f),os.path.join(feature_path,f),instruments,allowed_styles,allowed_dynamics,allowed_case,time_shifts,rwc_path,chunk_size,sample_size,style[s],style_midi[s],nharmonics,interval,tuning_freq)
               combos = engine.getCombos()
               print len(combos)
               try:
