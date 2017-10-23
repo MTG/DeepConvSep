@@ -45,7 +45,7 @@ python separate_bach10.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
 where :
 - \<inputfile\> is the wav file to separate
 - \<outputdir\> is the output directory where to write the separation
-- \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://drive.google.com/open?id=0B-Th_dYuM4nOa3ZMSmhwRkwzaGM">to_be_added_soon/a>
+- \<path_to_model.pkl\> is the local path to the .pkl file you can download from <a href="https://zenodo.org/record/1009144">zenodo</a>
 
 The folder with the \<inputfile\> must contain the scores: 'bassoon_b.txt','clarinet_b.txt','saxophone_b.txt','violin_b.txt'. The score file as a note on each line with the format: note_onset_time,note_offset_time,note_name .
 
