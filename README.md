@@ -175,7 +175,7 @@ We generate training data with the approach mentioned above using the RWC databa
 
 The score is given in .txt files containing the name of the of the instrument and an additional suffix, e.g. 'bassoon_g.txt'. The format for a note in the text file is: onset, offset, midinotename , as the following example: 6.1600,6.7000,F4# .
 
-The code to for feature computation and training the network can be found in "examples/bach10_sourceseparation" folder.
+The code for feature computation and training the network can be found in "examples/bach10_sourceseparation" folder.
 
 
 # Separating Professionally Produced Music
@@ -258,7 +258,7 @@ The TITANX used for this research was donated by the NVIDIA Corporation.
     Copyright (c) 2014-2017
     Marius Miron <miron.marius at gmail dot com>,
     Pritish Chandna <pc2752 at gmail dot com>,
-    Gerrard Erruz, and Hector Martel
+    Gerard Erruz, and Hector Martel
     Music Technology Group, Universitat Pompeu Fabra, Barcelona <mtg.upf.edu>
 
     This program is free software: you can redistribute it and/or modify
