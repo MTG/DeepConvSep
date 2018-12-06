@@ -166,7 +166,7 @@ We have three experiments:
 
 -RWC: train with the pieces synthesized using the samples in <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>.
 
-The code to for feature computation and training the network can be found in "examples/bach10" folder.
+The code for feature computation and training the network can be found in "examples/bach10" folder.
 
 # Score-informed separation of classical music mixtures with Bach10 dataset
 We separate bassoon,clarinet,saxophone,violing using <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>, which comprises 10 Bach chorales and the associated score.
@@ -175,18 +175,18 @@ We generate training data with the approach mentioned above using the RWC databa
 
 The score is given in .txt files containing the name of the of the instrument and an additional suffix, e.g. 'bassoon_g.txt'. The format for a note in the text file is: onset, offset, midinotename , as the following example: 6.1600,6.7000,F4# .
 
-The code to for feature computation and training the network can be found in "examples/bach10_sourceseparation" folder.
+The code for feature computation and training the network can be found in "examples/bach10_sourceseparation" folder.
 
 
 # Separating Professionally Produced Music
 We separate voice, bass, drums and accompaniment using DSD100 dataset comprising professionally produced music. For more details about the challenge, please refer to <a href="http://www.sisec17.audiolabs-erlangen.de">SiSEC MUS</a> challenge and <a href="https://sisec.inria.fr/home/2016-professionally-produced-music-recordings/">DSD100</a> dataset.
 
-The code to for feature computation and training the network can be found in "examples/dsd100" folder.
+The code for feature computation and training the network can be found in "examples/dsd100" folder.
 
 # iKala - Singing voice separation
 We separate voice and accompaniment using the iKala dataset. For more details about the challenge, please refer to <a href="http://www.music-ir.org/mirex/wiki/2016:Singing_Voice_Separation_Results">MIREX Singing voice separation 2016</a> and <a href="http://mac.citi.sinica.edu.tw/ikala/">iKala</a> dataset.
 
-The code to for feature computation and training the network can be found in "examples/ikala" folder.
+The code for feature computation and training the network can be found in "examples/ikala" folder.
 
 # Training models
 
@@ -258,7 +258,7 @@ The TITANX used for this research was donated by the NVIDIA Corporation.
     Copyright (c) 2014-2017
     Marius Miron <miron.marius at gmail dot com>,
     Pritish Chandna <pc2752 at gmail dot com>,
-    Gerrard Erruz, and Hector Martel
+    Gerard Erruz, and Hector Martel
     Music Technology Group, Universitat Pompeu Fabra, Barcelona <mtg.upf.edu>
 
     This program is free software: you can redistribute it and/or modify
