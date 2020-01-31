@@ -40,7 +40,7 @@ where :
 
 Score-informed separation of Bach chorales from the Bach10 dataset into bassoon, clarinet, saxophone, violin in examples/bach10_scoreinformed/separate_bach10.py:
 
-python separate_bach10.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
+    python separate_bach10.py -i <inputfile> -o <outputdir> -m <path_to_model.pkl>
 
 where :
 - \<inputfile\> is the wav file to separate
@@ -162,18 +162,18 @@ We have three experiments:
 
 -Oracle: train with the original pieces (obviously overfitting, hence this is the "Oracle");
 
--Sibelius: train with the pieces sythesized with Sibelius software;
+-Sibelius: train with the pieces synthesized with Sibelius software;
 
 -RWC: train with the pieces synthesized using the samples in <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>.
 
 The code for feature computation and training the network can be found in "examples/bach10" folder.
 
 # Score-informed separation of classical music mixtures with Bach10 dataset
-We separate bassoon,clarinet,saxophone,violing using <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>, which comprises 10 Bach chorales and the associated score.
+We separate bassoon, clarinet, saxophone, violing using <a href="http://music.cs.northwestern.edu/data/Bach10.html">Bach10 dataset</a>, which comprises 10 Bach chorales and the associated score.
 
 We generate training data with the approach mentioned above using the RWC database. Consequently, we train with the pieces synthesized using the samples in <a href="https://staff.aist.go.jp/m.goto/RWC-MDB/">RWC instrument sound dataset</a>.
 
-The score is given in .txt files containing the name of the of the instrument and an additional suffix, e.g. 'bassoon_g.txt'. The format for a note in the text file is: onset, offset, midinotename , as the following example: 6.1600,6.7000,F4# .
+The score is given in .txt files containing the name of the of the instrument and an additional suffix, e.g. 'bassoon_g.txt'. The format for a note in the text file is: onset, offset, midinotename, as the following example: 6.1600,6.7000,F4# .
 
 The code for feature computation and training the network can be found in "examples/bach10_sourceseparation" folder.
 
